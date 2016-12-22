@@ -1,0 +1,20 @@
+10810  npm -v
+10811  cp ../techan.js/package.json .
+10812  cat package.json
+10813  vim package.json
+10814  npm install
+10815  npm start
+10816  ls
+10817  python -m SimpleHTTPServer 9000
+10818  vim test.html
+10819  python -m SimpleHTTPServer 9000
+10820  mkdir feeder
+10821  cd feeder
+10822  vim data.csv
+10823  vim index.html
+10824  cd ..
+10825  python -m SimpleHTTPServer 9000
+10826  git status
+10827  history
+10828  tail -20
+10829  history | tail -20
