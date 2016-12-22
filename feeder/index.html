@@ -15,29 +15,44 @@
         stroke-width: 1;
     }
 
-    path.ohlc {
+    path.candle {
         stroke: #000000;
-        stroke-width: 1;
     }
 
-    path.ohlc.up {
+    path.candle.body {
+        stroke-width: 0;
+    }
+
+    path.candle.up {
+        fill: #00AA00;
         stroke: #00AA00;
     }
 
-    path.ohlc.down {
+    path.candle.down {
+        fill: #FF0000;
         stroke: #FF0000;
     }
 
-    .ma-0 path.line {
-        stroke: #1f77b4;
-    }
-
-    .ma-1 path.line {
-        stroke: #aec7e8;
-    }
 
     path.volume {
-        fill: #EEEEEE;
+        fill: #AAAAAA;
+        opacity: 0.5;
+    }
+
+    path.volume.up {
+        fill: #00AA00;
+    }
+
+    path.volume.down {
+        fill: #FF0000;
+    }
+
+
+    button {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        display: none;
     }
 
     .crosshair {
@@ -55,6 +70,9 @@
 
 </style>
 <body>
+
+<button>Next</button>
+
 <script src="http://d3js.org/d3.v4.min.js"></script>
 <script src="http://techanjs.org/techan.min.js"></script>
 <script>
@@ -78,19 +96,9 @@
             .xScale(x)
             .yScale(y);
 
-    var sma0 = techan.plot.sma()
+    var candlestick = techan.plot.candlestick()
             .xScale(x)
             .yScale(y);
-
-    var sma0Calculator = techan.indicator.sma()
-            .period(10);
-
-    var sma1 = techan.plot.sma()
-            .xScale(x)
-            .yScale(y);
-
-    var sma1Calculator = techan.indicator.sma()
-            .period(20);
 
     var volume = techan.plot.volume()
             .accessor(ohlc.accessor())   // Set the accessor to a ohlc accessor so we get highlighted bars
@@ -158,14 +166,6 @@
             .attr("class", "candlestick")
             .attr("clip-path", "url(#ohlcClip)");
 
-    ohlcSelection.append("g")
-            .attr("class", "indicator sma ma-0")
-            .attr("clip-path", "url(#ohlcClip)");
-
-    ohlcSelection.append("g")
-            .attr("class", "indicator sma ma-1")
-            .attr("clip-path", "url(#ohlcClip)");
-
     svg.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")");
@@ -194,7 +194,7 @@
     var feed;
 
     d3.csv("data.csv", function(error, csv) {
-        var accessor = ohlc.accessor();
+        var accessor = candlestick.accessor();
 
         feed = csv.map(function(d) {
             return {
@@ -208,7 +208,27 @@
         }).sort(function(a, b) { return d3.ascending(accessor.d(a), accessor.d(b)); });
 
         // Start off an initial set of data
+        var data=feed.slice(0, 163)
         redraw(feed.slice(0, 163));
+
+        d3.select("button").on("click", function() {
+              var newData;
+
+              if(data.length < feed.length) {
+                  // Simulate a daily feed
+                  newData = feed.slice(0, data.length+1);
+              }
+              else {
+                  // Simulate intra day updates when no feed is left
+                  var last = data[data.length-1];
+                  // Last must be between high and low
+                  last.close = Math.round(((last.high - last.low)*Math.random())*10)/10+last.low;
+
+                  newData = data;
+              }
+              redraw(newData);
+              data=newData;
+        }).style("display", "inline");
     });
 
     function redraw(data) {
@@ -231,33 +251,31 @@
                 selection.select('g.y.axis').call(yAxis);
                 selection.select("g.volume.axis").call(volumeAxis);
 
-                selection.select("g.candlestick").datum(data).call(ohlc);
-                selection.select("g.sma.ma-0").datum(sma0Calculator(data)).call(sma0);
-                selection.select("g.sma.ma-1").datum(sma1Calculator(data)).call(sma1);
+                selection.select("g.candlestick").datum(data).call(candlestick);
                 selection.select("g.volume").datum(data).call(volume);
 
                 svg.select("g.crosshair.ohlc").call(crosshair);
             });
 
-        // Set next timer expiry
-        setTimeout(function() {
-            var newData;
-
-            if(data.length < feed.length) {
-                // Simulate a daily feed
-                newData = feed.slice(0, data.length+1);
-            }
-            else {
-                // Simulate intra day updates when no feed is left
-                var last = data[data.length-1];
-                // Last must be between high and low
-                last.close = Math.round(((last.high - last.low)*Math.random())*10)/10+last.low;
-
-                newData = data;
-            }
-
-            redraw(newData);
-        }, (Math.random()*1000)+400); // Randomly pick an interval to update the chart
+        // // Set next timer expiry
+        // setTimeout(function() {
+        //     var newData;
+        //
+        //     if(data.length < feed.length) {
+        //         // Simulate a daily feed
+        //         newData = feed.slice(0, data.length+1);
+        //     }
+        //     else {
+        //         // Simulate intra day updates when no feed is left
+        //         var last = data[data.length-1];
+        //         // Last must be between high and low
+        //         last.close = Math.round(((last.high - last.low)*Math.random())*10)/10+last.low;
+        //
+        //         newData = data;
+        //     }
+        //
+        //     redraw(newData);
+        // }, (Math.random()*1000)+400); // Randomly pick an interval to update the chart
     }
 
     function move(coords) {
