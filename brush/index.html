@@ -119,9 +119,9 @@
 
     var xAxis2 = d3.axisBottom(x2);
 
-    var yAxis = d3.axisLeft(y);
+    var yAxis = d3.axisRight(y);
 
-    var yAxis2 = d3.axisLeft(y2)
+    var yAxis2 = d3.axisRight(y2)
             .ticks(0);
 
     var ohlcAnnotation = techan.plot.axisannotation()
@@ -200,6 +200,7 @@
 
     context.append("g")
             .attr("class", "y axis")
+            .attr("transform", "translate(" + width+")", 0) // move y axis to right
             .call(yAxis2);
 
     var result = d3.csv("data.csv", function(error, data) {
@@ -229,12 +230,18 @@
         context.select("g.close").datum(data).call(close);
         context.select("g.x.axis").call(xAxis2);
 
-        // Associate the brush with the scale and render the brush only AFTER a domain has been applied
-        context.select("g.pane").call(brush).selectAll("rect").attr("height", height2);
-
         x.zoomable().domain(x2.zoomable().domain());
-        draw();
 
+        pix = 69*width/data.length; // 69 is bar
+
+        // Associate the brush with the scale and render the brush only AFTER a domain has been applied
+        context.select("g.pane")
+          .call(brush)
+          .call(brush.move, [width-pix,width])
+          .selectAll("rect").attr("height", height2)
+          ;
+
+        draw();
         console.log("Render time: " + (Date.now()-timestart));
     });
 
