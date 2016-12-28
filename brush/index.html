@@ -94,7 +94,7 @@
 </style>
 <body>
 
-<button>Next</button>
+<button>Next Bar</button>
 <button id='button-buy'>Buy</button>
 <button>Sell</button> <br>
 
@@ -258,120 +258,56 @@
         data = feed.slice(0, 125); // make it global
 
         d3.select("button").on("click", function() {
-              var newData;
-
               if(data.length < feed.length) {
                   // Simulate a daily feed
                   data = feed.slice(0, data.length+1);
               }
               console.log(data.length);
 
-              // else {
-              //     // Simulate intra day updates when no feed is left
-              //     var last = data[data.length-1];
-              //     // Last must be between high and low
-              //     last.close = Math.round(((last.high - last.low)*Math.random())*10)/10+last.low;
-              //
-              //     newData = data;
-              // }
-              // redraw(newData);
-              // data=newData;
-              draw(data)
-        }).style("display", "inline");
-
-        //
-        // x.domain(data.map(accessor.d));
-        // x2.domain(x.domain());
-        // y.domain(techan.scale.plot.ohlc(data, accessor).domain());
-        // y2.domain(y.domain());
-        // yVolume.domain(techan.scale.plot.volume(data).domain());
-        //
-        // focus.select("g.candlestick").datum(data); // set data
-        // focus.select("g.volume").datum(data);
-        //
-        // context.select("g.close").datum(data).call(close);
-        // context.select("g.x.axis").call(xAxis2);
-        //
-        // x.zoomable().domain(x2.zoomable().domain());
-
-
-        //
-        // brush_pix = 69*width/data.length; // 69 is bar
-        //
-        // // Associate the brush with the scale and render the brush only AFTER a domain has been applied
-        // context.select("g.pane")
-        //   .call(brush)
-        //   .call(brush.move, [width-brush_pix,width])  // set initial brush rect.
-        //   .selectAll("rect").attr("height", height2);
-        //
-
-        // draw(data);
-        console.log("Render time: " + (Date.now()-timestart));
-    });
-
-    function brushed() {
-
-        var zoomable = x.zoomable(),
-            zoomable2 = x2.zoomable();
-
-        zoomable.domain(zoomable2.domain());
-        if(d3.event.selection !== null) zoomable.domain(d3.event.selection.map(zoomable.invert));
-
-        // if brushed triggered from draw, should return.
-
-        console.log('in brushed');
-        console.log(d3.event.sourceEvent.type);
-        if (d3.event.sourceEvent && d3.event.sourceEvent.type === "click") return;  // from click next button
-        //if (d3.event.sourceEvent && d3.event.sourceEvent.type === "end") return;
-
-        draw(data, false);  // data to cut to show. issue is here.
-    }
-
-    function draw(data, reset_brush) {
-        reset_brush = typeof reset_brush !== 'undefined' ? reset_brush : true;
-
-        console.log('in draw');
-        if (d3.event.sourceEvent) console.log(d3.event.sourceEvent.type);
-        if (d3.event.sourceEvent && d3.event.sourceEvent.type === "brush") return; // ignore zoom-by-brush
-        // if (d3.event.sourceEvent && d3.event.sourceEvent.type === "end") return; // ignore zoom-by-brush
-
-        accessor = candlestick.accessor();
-
-        //var candlestickSelection = focus.select("g.candlestick"); //,
-        //var data = candlestickSelection.datum(); // use this one otherwise data.map error
-
         x.domain(data.map(accessor.d));
         x2.domain(x.domain());
-
-
         y.domain(techan.scale.plot.ohlc(data, accessor).domain());
         y2.domain(y.domain());
         yVolume.domain(techan.scale.plot.volume(data).domain());
 
-        focus.select("g.candlestick").datum(data); // set data
+        focus.select("g.candlestick").datum(data);
         focus.select("g.volume").datum(data);
 
         context.select("g.close").datum(data).call(close);
         context.select("g.x.axis").call(xAxis2);
 
-        x.zoomable().domain(x2.zoomable().domain());
-
-        brush_pix = 69*width/data.length; // 69 is bar
+        brush_pix = 69*width/data.length; // 69 is bar to show
+        // Associate the brush with the scale and render the brush only AFTER a domain has been applied
+        context.select("g.pane")
+          .call(brush)
+          .call(brush.move, [width-brush_pix,width])  // set initial brush rect.
+          .selectAll("rect").attr("height", height2);
 
         // Associate the brush with the scale and render the brush only AFTER a domain has been applied
-        if (reset_brush)
-          context.select("g.pane")
-            .call(brush)
-            .call(brush.move, [width-brush_pix,width])  // set initial brush rect.
-            .selectAll("rect").attr("height", height2);
-        // end of copied
+        context.select("g.pane").call(brush).selectAll("rect").attr("height", height2); // seems no use
 
-        var candlestickSelection = focus.select("g.candlestick");
-        var data = candlestickSelection.datum();
-        //console.log(data.slice)
+        // x.zoomable().domain(x2.zoomable().domain());  // comment out, or x2 set to whole one.
+        draw();
 
+        }).style("display", "inline");
+
+        // todo, send a button click
+        console.log("Render time: " + (Date.now()-timestart));
+    });
+
+    function brushed() {
+        var zoomable = x.zoomable(),
+            zoomable2 = x2.zoomable();
+
+        zoomable.domain(zoomable2.domain());
+        if(d3.event.selection !== null) zoomable.domain(d3.event.selection.map(zoomable.invert));
+        draw();
+    }
+
+    function draw() {
+        var candlestickSelection = focus.select("g.candlestick"),
+            data = candlestickSelection.datum();
         y.domain(techan.scale.plot.ohlc(data.slice.apply(data, x.zoomable().domain()), candlestick.accessor()).domain());
-
         candlestickSelection.call(candlestick);
         focus.select("g.volume").call(volume);
         // using refresh method is more efficient as it does not perform any data joins
