@@ -46,16 +46,16 @@
         fill: #EEEEEE;
     }*/
     path.volume {
-        fill: #EEEEEE;
+        fill: #AAAAAA;
         opacity: 0.5;
     }
 
     path.volume.up {
-        fill: #EEEEEE;
+        fill: #00AA00;
     }
 
     path.volume.down {
-        fill: #EEEEEE;
+        fill: #FF0000;
     }
 
 
@@ -94,9 +94,9 @@
 </style>
 <body>
 
-<button id='button_next'>Next Bar</button>
-<button id='button_buy'>Buy</button>
-<button id='button_sell'>Sell</button> <br>
+<button>Next Bar</button>
+<button id='button-buy'>Buy</button>
+<button>Sell</button> <br>
 
 <script src="http://d3js.org/d3.v4.min.js"></script>
 <script src="http://techanjs.org/techan.min.js"></script>
@@ -106,12 +106,11 @@
         margin_volume = {top: 420, right: 30, bottom: 100, left: 50},
         margin_close = {top: 520, right: 30, bottom: 20, left: 50},
 
-
         width_main = 960 - margin_main.left - margin_main.right,
-        height_main = 600 - margin_main.top - margin_main.bottom,
 
-        height_close = 600 - margin_close.top - margin_close.bottom;  // 500-420-20=60 pix
-        volume_close = 600 - margin_volume.top - margin_volume.bottom;  // 100 pix ?
+        height_main = 600 - margin_main.top - margin_main.bottom,
+        height_close = 600 - margin_close.top - margin_close.bottom,  // 500-420-20=60 pix
+        height_volume = 600 - margin_volume.top - margin_volume.bottom;  // 100 pix ?
 
 
     // var parseDate = d3.timeParse("%d-%b-%y");  // e.g. 23-May-14
@@ -119,17 +118,21 @@
 
     var x = techan.scale.financetime()
             .range([0, width_main]);
-
-    var x2 = techan.scale.financetime()
-            .range([0, width_main]);
-
     var y = d3.scaleLinear()
             .range([height_main, 0]);
 
+    var xVolume = techan.scale.financetime()
+            .range([0, width_main]);
     var yVolume = d3.scaleLinear()
-            .range([y(0), y(0.3)]);
+            .range([height_volume, 0]);
 
-    var y2 = d3.scaleLinear()
+{#    var yVolume = d3.scaleLinear()#}
+{#            .range([y(0), y(0.3)]);#}
+
+
+    var xClose = techan.scale.financetime()
+            .range([0, width_main]);
+    var yClose = d3.scaleLinear()
             .range([height_close, 0]);
 
     var brush = d3.brushX()
@@ -142,25 +145,28 @@
 
     var volume = techan.plot.volume()
             .accessor(candlestick.accessor())   // Set the accessor to a candlestick accessor so we get highlighted bars
-            .xScale(x)
+            .xScale(xVolume)
             .yScale(yVolume);
 
-    var volumeAxis = d3.axisRight(yVolume)
-            .ticks(3)
-            .tickFormat(d3.format(",.3s"));
+{#    var volumeAxis = d3.axisRight(yVolume)#}
+{#            .ticks(3)#}
+{#            .tickFormat(d3.format(",.3s"));#}
 
     var close = techan.plot.close()
-            .xScale(x2)
-            .yScale(y2);
+            .xScale(xClose)
+            .yScale(yClose);
 
     var xAxis = d3.axisBottom(x);
-
-    var xAxis2 = d3.axisBottom(x2);
-
     var yAxis = d3.axisRight(y);
 
-    var yAxis2 = d3.axisRight(y2)
+    var xAxisClose = d3.axisBottom(xClose);
+    var yAxisClose = d3.axisRight(yClose)
             .ticks(0);
+
+    var xAsisVolume = d3.axisBottom(xVolume);
+    var yAsisVolume = d3.axisRight(yVolume)
+            .ticks(3)
+            .tickFormat(d3.format(",.3s"));
 
     var ohlcAnnotation = techan.plot.axisannotation()
             .axis(yAxis)
@@ -175,7 +181,7 @@
             .translate([0, height_main]);
 
     var volumeAnnotation = techan.plot.axisannotation()
-            .axis(volumeAxis)
+            .axis(yAsisVolume)
             .orient('right')
             .width(35);
 
@@ -187,7 +193,8 @@
 
     var svg = d3.select("body").append("svg")
             .attr("width", width_main + margin_main.left + margin_main.right)
-            .attr("height", height_main + margin_main.top + margin_main.bottom);
+            .attr("height", height_main + margin_main.top + margin_main.bottom
+                            +height_volume + margin_volume.top + margin_volume.bottom);
 
     var focus = svg.append("g")
             .attr("class", "focus")
@@ -203,7 +210,8 @@
 
     focus.append("g")
             .attr("class", "volume")
-            .attr("clip-path", "url(#clip)");
+            .attr("clip-path", "url(#clip)")
+            .attr("transform", "translate(0," + 380 + ")");
 
     focus.append("g")
             .attr("class", "candlestick")
@@ -212,6 +220,21 @@
     focus.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height_main + ")");
+
+    focus.append("g")
+            .attr("class", "xVolume axis")
+            .attr("transform", "translate(0," + (height_volume + height_main) + ")"); // ?
+
+    focus.append("g")
+            .attr("class", "yVolume axis")
+            .attr("transform", "translate(" + width_main + ","+ height_main +")" ) //, 0)
+        .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("yVolume", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Volume");
+
 
     focus.append("g")
             .attr("class", "y axis")
@@ -244,7 +267,7 @@
     context.append("g")
             .attr("class", "y axis")
             .attr("transform", "translate(" + width_main+")", 0) // move y axis to right
-            .call(yAxis2);
+            .call(yAxisClose);
 
     // var result = d3.csv("{{ url_for('static', filename='data.csv') }}", function(error, csv) {
     var result = d3.csv("{{ url_for('static', filename=data_file) }}", function(error, csv) {
@@ -267,7 +290,7 @@
 
         data = feed.slice(0, 125); // make it global
 
-        d3.select("#button_next").on("click", function() {
+        d3.select("button").on("click", function() {
               if(data.length < feed.length) {
                   // Simulate a daily feed
                   data = feed.slice(0, data.length+1);
@@ -275,16 +298,16 @@
               console.log(data.length);
 
         x.domain(data.map(accessor.d));
-        x2.domain(x.domain());
+        xClose.domain(x.domain());
         y.domain(techan.scale.plot.ohlc(data, accessor).domain());
-        y2.domain(y.domain());
+        yClose.domain(y.domain());
         yVolume.domain(techan.scale.plot.volume(data).domain());
 
         focus.select("g.candlestick").datum(data);
-        focus.select("g.volume").datum(data);
+        focus.select("g.volume").datum(data);  // todo
 
         context.select("g.close").datum(data).call(close);
-        context.select("g.x.axis").call(xAxis2);
+        context.select("g.x.axis").call(xAxisClose);
 
         brush_pix = 69*width_main/data.length; // 69 is bar to show
         // Associate the brush with the scale and render the brush only AFTER a domain has been applied
@@ -296,7 +319,7 @@
         // Associate the brush with the scale and render the brush only AFTER a domain has been applied
         context.select("g.pane").call(brush).selectAll("rect").attr("height", height_close); // seems no use
 
-        // x.zoomable().domain(x2.zoomable().domain());  // comment out, or x2 set to whole one.
+        // x.zoomable().domain(xClose.zoomable().domain());  // comment out, or xClose set to whole one.
         draw();
 
         }).style("display", "inline");
@@ -305,13 +328,9 @@
         console.log("Render time: " + (Date.now()-timestart));
     });
 
-
-    d3.select("#button_buy").on("click", function(d,i) { buy(); } );
-    d3.select("#button_sell").on("click", function(d,i) { sell(); } );
-
     function brushed() {
         var zoomable = x.zoomable(),
-            zoomable2 = x2.zoomable();
+            zoomable2 = xClose.zoomable();
 
         zoomable.domain(zoomable2.domain());
         if(d3.event.selection !== null) zoomable.domain(d3.event.selection.map(zoomable.invert));
@@ -329,15 +348,9 @@
 //        svg.select("g.candlestick").call(candlestick.refresh);
         focus.select("g.x.axis").call(xAxis);
         focus.select("g.y.axis").call(yAxis);
-        focus.select("g.volume.axis").call(volumeAxis);
-    }
-
-    function buy() {
-        console.log('in buy');
-    }
-
-    function sell() {
-        console.log('in sell');
+        // focus.select("g.volume.axis").call(yAsisVolume);
+        focus.select("g.xVolume.axis").call(xAsisVolume);
+        focus.select("g.yVolume.axis").call(yAsisVolume);
     }
 
 </script>
