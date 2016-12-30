@@ -102,11 +102,17 @@
 <script src="http://techanjs.org/techan.min.js"></script>
 <script>
 
-    var margin_main = {top: 20, right: 30, bottom: 100, left: 50},
-        margin_close = {top: 420, right: 30, bottom: 20, left: 50},
+    var margin_main = {top: 20, right: 30, bottom: 200, left: 50},
+        margin_volume = {top: 420, right: 30, bottom: 100, left: 50},
+        margin_close = {top: 520, right: 30, bottom: 20, left: 50},
+
+
         width_main = 960 - margin_main.left - margin_main.right,
-        height_main = 500 - margin_main.top - margin_main.bottom,
-        height_close = 500 - margin_close.top - margin_close.bottom;  // 500-420-20=60 pix
+        height_main = 600 - margin_main.top - margin_main.bottom,
+
+        height_close = 600 - margin_close.top - margin_close.bottom;  // 500-420-20=60 pix
+        volume_close = 600 - margin_volume.top - margin_volume.bottom;  // 100 pix ?
+
 
     // var parseDate = d3.timeParse("%d-%b-%y");  // e.g. 23-May-14
     var parseDate = d3.timeParse("%Y-%m-%d");  // e.g. 1980-10-01
