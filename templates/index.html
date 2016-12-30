@@ -102,32 +102,32 @@
 <script src="http://techanjs.org/techan.min.js"></script>
 <script>
 
-    var margin = {top: 20, right: 20, bottom: 100, left: 50},
-        margin2 = {top: 420, right: 20, bottom: 20, left: 50},
-        width = 960 - margin.left - margin.right,
-        height = 500 - margin.top - margin.bottom,
-        height2 = 500 - margin2.top - margin2.bottom;
+    var margin_main = {top: 20, right: 30, bottom: 100, left: 50},
+        margin_close = {top: 420, right: 30, bottom: 20, left: 50},
+        width_main = 960 - margin_main.left - margin_main.right,
+        height_main = 500 - margin_main.top - margin_main.bottom,
+        height_close = 500 - margin_close.top - margin_close.bottom;  // 500-420-20=60 pix
 
     // var parseDate = d3.timeParse("%d-%b-%y");  // e.g. 23-May-14
     var parseDate = d3.timeParse("%Y-%m-%d");  // e.g. 1980-10-01
 
     var x = techan.scale.financetime()
-            .range([0, width]);
+            .range([0, width_main]);
 
     var x2 = techan.scale.financetime()
-            .range([0, width]);
+            .range([0, width_main]);
 
     var y = d3.scaleLinear()
-            .range([height, 0]);
+            .range([height_main, 0]);
 
     var yVolume = d3.scaleLinear()
             .range([y(0), y(0.3)]);
 
     var y2 = d3.scaleLinear()
-            .range([height2, 0]);
+            .range([height_close, 0]);
 
     var brush = d3.brushX()
-            .extent([[0, 0], [width, height2]])
+            .extent([[0, 0], [width_main, height_close]])
             .on("brush end", brushed);
 
     var candlestick = techan.plot.candlestick()
@@ -158,7 +158,7 @@
 
     var ohlcAnnotation = techan.plot.axisannotation()
             .axis(yAxis)
-            .orient('left')  // cant to right ? width?
+            .orient('left')  // cant to right ? width_main?
             .format(d3.format(',.2f'));
 
     var timeAnnotation = techan.plot.axisannotation()
@@ -166,7 +166,7 @@
             .orient('bottom')
             .format(d3.timeFormat('%Y-%m-%d'))
             .width(65)
-            .translate([0, height]);
+            .translate([0, height_main]);
 
     var volumeAnnotation = techan.plot.axisannotation()
             .axis(volumeAxis)
@@ -180,19 +180,19 @@
             .yAnnotation([ohlcAnnotation,volumeAnnotation]);
 
     var svg = d3.select("body").append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom);
+            .attr("width", width_main + margin_main.left + margin_main.right)
+            .attr("height", height_main + margin_main.top + margin_main.bottom);
 
     var focus = svg.append("g")
             .attr("class", "focus")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            .attr("transform", "translate(" + margin_main.left + "," + margin_main.top + ")");
 
     focus.append("clipPath")
             .attr("id", "clip")
         .append("rect")
             .attr("x", 0)
             .attr("y", y(1))
-            .attr("width", width)
+            .attr("width", width_main)
             .attr("height", y(0) - y(1));
 
     focus.append("g")
@@ -205,11 +205,11 @@
 
     focus.append("g")
             .attr("class", "x axis")
-            .attr("transform", "translate(0," + height + ")");
+            .attr("transform", "translate(0," + height_main + ")");
 
     focus.append("g")
             .attr("class", "y axis")
-            .attr("transform", "translate(" + width + ")", 0)
+            .attr("transform", "translate(" + width_main + ")", 0)
         .append("text")
             .attr("transform", "rotate(-90)")
             .attr("y", 6)
@@ -223,7 +223,7 @@
 
     var context = svg.append("g")
             .attr("class", "context")
-            .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+            .attr("transform", "translate(" + margin_close.left + "," + margin_close.top + ")");
 
     context.append("g")
             .attr("class", "close");
@@ -233,11 +233,11 @@
 
     context.append("g")
             .attr("class", "x axis")
-            .attr("transform", "translate(0," + height2 + ")");
+            .attr("transform", "translate(0," + height_close + ")");
 
     context.append("g")
             .attr("class", "y axis")
-            .attr("transform", "translate(" + width+")", 0) // move y axis to right
+            .attr("transform", "translate(" + width_main+")", 0) // move y axis to right
             .call(yAxis2);
 
     // var result = d3.csv("{{ url_for('static', filename='data.csv') }}", function(error, csv) {
@@ -280,15 +280,15 @@
         context.select("g.close").datum(data).call(close);
         context.select("g.x.axis").call(xAxis2);
 
-        brush_pix = 69*width/data.length; // 69 is bar to show
+        brush_pix = 69*width_main/data.length; // 69 is bar to show
         // Associate the brush with the scale and render the brush only AFTER a domain has been applied
         context.select("g.pane")
           .call(brush)
-          .call(brush.move, [width-brush_pix,width])  // set initial brush rect.
-          .selectAll("rect").attr("height", height2);
+          .call(brush.move, [width_main-brush_pix,width_main])  // set initial brush rect.
+          .selectAll("rect").attr("height", height_close);
 
         // Associate the brush with the scale and render the brush only AFTER a domain has been applied
-        context.select("g.pane").call(brush).selectAll("rect").attr("height", height2); // seems no use
+        context.select("g.pane").call(brush).selectAll("rect").attr("height", height_close); // seems no use
 
         // x.zoomable().domain(x2.zoomable().domain());  // comment out, or x2 set to whole one.
         draw();
