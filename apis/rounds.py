@@ -1,10 +1,23 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, DateTime, String, Integer, ForeignKey, func, Float
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
+
+
+class Strategy(Base):
+    __tablename__ = 'strategy'
+
+    id = Column(Integer, primary_key=True)
+    created = Column(DateTime, default=func.now())
+
+    user_name = Column(String(16), default='baifriend')
+    fund = Column(Float, default=100000)  # 100k initial funding
+
+    note = Column(Text)
+    symbols = Column(Text)
 
 
 class Game(Base):
@@ -14,8 +27,11 @@ class Game(Base):
 
     symbol = Column(String(10))
 
-    start_dt = Column(DateTime)
-    end_dt = Column(DateTime)
+    chart_start = Column(DateTime)
+    chart_end = Column(DateTime)
+    game_start = Column(DateTime)  # time in chart.
+
+    player_id = Column(Integer, ForeignKey('strategy.id'))
 
 
 class Round(Base):
@@ -24,13 +40,13 @@ class Round(Base):
     created = Column(DateTime, default=func.now())
     symbol = Column(String(10))  # this is duplicates
 
-    start_dt = Column(DateTime)
-    end_dt = Column(DateTime)
+    round_start = Column(DateTime)
+    round_current = Column(DateTime)
 
     buy_sell = Column(String(1))
     entry_price = Column(Float)
     exit_price = Column(Float)
-    shares = Column(Float)
+    position = Column(Integer)
 
     max_drawdown = Column(Float)
     profit_percentage = Column(Float)
@@ -45,28 +61,35 @@ class Round(Base):
     # Game accesses rounds use list
 
 
-engine = create_engine('mysql://root:@localhost:3306/chartgame', echo=True)
+class GameView(object):
+    def __init__(self, **kwargs):
+        self.fund = kwargs.get('fund', 100000)
+        self.symbol = kwargs.get('symbol', 'IBM')
 
-Session = sessionmaker()
-Session.configure(bind=engine)
-Base.metadata.create_all(engine)
-session = Session()
 
-ibm = Game(symbol='IBM')
-round1 = Round(symbol='IBM')
+if __name__ == "__main__":
+    engine = create_engine('mysql://root:@localhost:3306/chartgame', echo=True)
 
-round1.game = ibm
+    Session = sessionmaker()
+    Session.configure(bind=engine)
+    Base.metadata.create_all(engine)
+    session = Session()
 
-session.add(round1)
-session.commit()
+    ibm = Game(symbol='IBM')
+    round1 = Round(symbol='IBM')
 
-round = session.query(Game) \
-    .filter(Game.symbol == 'IBM') \
-    .order_by(Game.id.desc()) \
-    .first()
+    round1.game = ibm
 
-print ibm.rounds
-print ibm.rounds[0].symbol
+    session.add(round1)
+    session.commit()
 
-# session.delete(it)
-# session.commit()
+    round = session.query(Game) \
+        .filter(Game.symbol == 'IBM') \
+        .order_by(Game.id.desc()) \
+        .first()
+
+    print ibm.rounds
+    print ibm.rounds[0].symbol
+
+    # session.delete(it)
+    # session.commit()

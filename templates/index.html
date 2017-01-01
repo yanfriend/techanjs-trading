@@ -83,6 +83,15 @@
     .crosshair .axisannotation path {
         fill: #DDDDDD;
     }
+
+    .y.annotation.right path {
+        fill: #FF0000;
+    }
+
+    .x.annotation path {
+        fill: #DDD80E;
+    }
+
 /*
     button {
         position: absolute;
@@ -93,6 +102,9 @@
 
 </style>
 <body>
+
+<button id='button_new_game'>New Game</button>
+<br>
 
 <button id='button_next'>Next Bar</button>
 <button id='button_buy'>Buy</button>
@@ -120,7 +132,7 @@
     var x = techan.scale.financetime()
             .range([0, width_main]);
 
-    var x2 = techan.scale.financetime()
+    var xClose = techan.scale.financetime()
             .range([0, width_main]);
 
     var y = d3.scaleLinear()
@@ -129,7 +141,7 @@
     var yVolume = d3.scaleLinear()
             .range([y(0), y(0.3)]);
 
-    var y2 = d3.scaleLinear()
+    var yClose = d3.scaleLinear()
             .range([height_close, 0]);
 
     var brush = d3.brushX()
@@ -150,21 +162,27 @@
             .tickFormat(d3.format(",.3s"));
 
     var close = techan.plot.close()
-            .xScale(x2)
-            .yScale(y2);
+            .xScale(xClose)
+            .yScale(yClose);
 
     var xAxis = d3.axisBottom(x);
 
-    var xAxis2 = d3.axisBottom(x2);
+    var xAxis2 = d3.axisBottom(xClose);
 
     var yAxis = d3.axisRight(y);
 
-    var yAxis2 = d3.axisRight(y2)
+    var yAxis2 = d3.axisRight(yClose)
             .ticks(0);
 
     var ohlcAnnotation = techan.plot.axisannotation()
             .axis(yAxis)
             .orient('left')  // cant to right ? width_main?
+            .format(d3.format(',.2f'));  // for crosshair
+
+    var ohlcRightAnnotation = techan.plot.axisannotation()  // for close price annotation
+            .axis(yAxis)
+            .orient('right')
+            .accessor(candlestick.accessor())
             .format(d3.format(',.2f'));
 
     var timeAnnotation = techan.plot.axisannotation()
@@ -223,9 +241,15 @@
             .style("text-anchor", "end")
             .text("Price ($)");
 
+    focus.append("g")
+            .attr("class", "y annotation right")
+            .attr("clip-path", "url(#clip)")
+            .attr("transform", "translate(" + width_main + ")", 0);
+
     focus.append('g')
             .attr("class", "crosshair")
             .call(crosshair);
+
 
     var context = svg.append("g")
             .attr("class", "context")
@@ -275,9 +299,9 @@
               console.log(data.length);
 
         x.domain(data.map(accessor.d));
-        x2.domain(x.domain());
+        xClose.domain(x.domain());
         y.domain(techan.scale.plot.ohlc(data, accessor).domain());
-        y2.domain(y.domain());
+        yClose.domain(y.domain());
         yVolume.domain(techan.scale.plot.volume(data).domain());
 
         focus.select("g.candlestick").datum(data);
@@ -296,7 +320,7 @@
         // Associate the brush with the scale and render the brush only AFTER a domain has been applied
         context.select("g.pane").call(brush).selectAll("rect").attr("height", height_close); // seems no use
 
-        // x.zoomable().domain(x2.zoomable().domain());  // comment out, or x2 set to whole one.
+        // x.zoomable().domain(xClose.zoomable().domain());  // comment out, or xClose set to whole one.
         draw();
 
         }).style("display", "inline");
@@ -305,13 +329,14 @@
         console.log("Render time: " + (Date.now()-timestart));
     });
 
+    d3.select("#button_new_game").on("click", function(d,i) { new_game(); } );
 
     d3.select("#button_buy").on("click", function(d,i) { buy(); } );
     d3.select("#button_sell").on("click", function(d,i) { sell(); } );
 
     function brushed() {
         var zoomable = x.zoomable(),
-            zoomable2 = x2.zoomable();
+            zoomable2 = xClose.zoomable();
 
         zoomable.domain(zoomable2.domain());
         if(d3.event.selection !== null) zoomable.domain(d3.event.selection.map(zoomable.invert));
@@ -330,14 +355,14 @@
         focus.select("g.x.axis").call(xAxis);
         focus.select("g.y.axis").call(yAxis);
         focus.select("g.volume.axis").call(volumeAxis);
+
+        focus.select("g.y.annotation.right").datum([data[data.length-1]]).call(ohlcRightAnnotation);
     }
 
-    function buy() {
-        console.log('in buy');
-    }
 
-    function sell() {
-        console.log('in sell');
-    }
+    var fund, symbol, positoin, entry_price;  // global
+
 
 </script>
+
+<script type='text/javascript' src='templates/apis.js'></script>
