@@ -92,6 +92,46 @@
         fill: #DDD80E;
     }
 
+{#  below for trade arrow #}
+
+    path.tradearrow {
+        stroke: none;
+    }
+
+    path.tradearrow.buy {
+        fill: #0000FF;
+    }
+
+    path.tradearrow.buy-pending {
+        fill-opacity: 0.2;
+        stroke: #0000FF;
+        stroke-width: 1.5;
+    }
+
+    path.tradearrow.sell {
+        fill: #9900FF;
+    }
+
+    .tradearrow path.highlight {
+        fill: none;
+        stroke-width: 2;
+    }
+
+    .tradearrow path.highlight.buy,.tradearrow path.highlight.buy-pending {
+        stroke: #0000FF;
+    }
+
+    .tradearrow path.highlight.buy-pending {
+        fill: #0000FF;
+        fill-opacity: 0.3;
+    }
+
+    .tradearrow path.highlight.sell {
+        stroke: #9900FF;
+    }
+
+
+
 /*
     button {
         position: absolute;
@@ -164,6 +204,14 @@
     var close = techan.plot.close()
             .xScale(xClose)
             .yScale(yClose);
+
+
+    var tradearrow = techan.plot.tradearrow()
+            .xScale(x)
+            .yScale(y)
+            .orient(function(d) { return d.type.startsWith("buy") ? "up" : "down"; })
+
+
 
     var xAxis = d3.axisBottom(x);
 
@@ -250,6 +298,9 @@
             .attr("class", "crosshair")
             .call(crosshair);
 
+    focus.append("g")
+            .attr("class", "tradearrow");
+
 
     var context = svg.append("g")
             .attr("class", "context")
@@ -270,33 +321,15 @@
             .attr("transform", "translate(" + width_main+")", 0) // move y axis to right
             .call(yAxis2);
 
-    // var result = d3.csv("{{ url_for('static', filename='data.csv') }}", function(error, csv) {
-    var result = d3.csv("{{ url_for('static', filename=data_file) }}", function(error, csv) {
-        var accessor = candlestick.accessor(),
-            timestart = Date.now();
 
-        // feed is the whole data
-        feed = csv.map(function(d) {
-            factor = +d['Adj Close']/+d.Close;
+    // main work; data load when page loading
+    var accessor = candlestick.accessor(),
+        timestart = Date.now();
 
-            return {
-                date: parseDate(d.Date),
-                open: +d.Open * factor,
-                high: +d.High * factor,
-                low: +d.Low * factor,
-                close: +d["Adj Close"],
-                volume: +d.Volume  // leave it as it is so far.
-            };
-        }).sort(function(a, b) { return d3.ascending(accessor.d(a), accessor.d(b)); });
-
-        data = feed.slice(0, 125); // make it global
-
-        d3.select("#button_next").on("click", function() {
-              if(data.length < feed.length) {
-                  // Simulate a daily feed
-                  data = feed.slice(0, data.length+1);
-              }
-              console.log(data.length);
+    d3.select("#button_next").on("click", function() {  // called when Next clicked
+        if(data.length < feed.length) {
+            data = feed.slice(0, data.length+1);
+        }
 
         x.domain(data.map(accessor.d));
         xClose.domain(x.domain());
@@ -320,21 +353,14 @@
         // Associate the brush with the scale and render the brush only AFTER a domain has been applied
         context.select("g.pane").call(brush).selectAll("rect").attr("height", height_close); // seems no use
 
-        // x.zoomable().domain(xClose.zoomable().domain());  // comment out, or xClose set to whole one.
         draw();
+    }).style("display", "inline");
 
-        }).style("display", "inline");
+    console.log("Render time: " + (Date.now()-timestart));
+    // todo, send a button click
 
-        // todo, send a button click
-        console.log("Render time: " + (Date.now()-timestart));
-    });
 
-    d3.select("#button_new_game").on("click", function(d,i) { new_game(); } );
-
-    d3.select("#button_buy").on("click", function(d,i) { buy(); } );
-    d3.select("#button_sell").on("click", function(d,i) { sell(); } );
-
-    function brushed() {
+    function brushed() {  // called by brush area change
         var zoomable = x.zoomable(),
             zoomable2 = xClose.zoomable();
 
@@ -343,7 +369,7 @@
         draw();
     }
 
-    function draw() {
+    function draw() {  // main drawing function
         var candlestickSelection = focus.select("g.candlestick"),
             data = candlestickSelection.datum();
         y.domain(techan.scale.plot.ohlc(data.slice.apply(data, x.zoomable().domain()), candlestick.accessor()).domain());
@@ -356,13 +382,43 @@
         focus.select("g.y.axis").call(yAxis);
         focus.select("g.volume.axis").call(volumeAxis);
 
-        focus.select("g.y.annotation.right").datum([data[data.length-1]]).call(ohlcRightAnnotation);
+        focus.select("g.y.annotation.right").datum([data[data.length-1]]).call(ohlcRightAnnotation);  // show close price
+
+        console.log(trades);
+        focus.select("g.tradearrow").datum(trades).call(tradearrow); // show trade arrow
+
     }
 
+    console.log("{{  data_file }}");
 
-    var fund, symbol, positoin, entry_price;  // global
+    var trades, fund, symbol, positoin, entry_price;  // global
 
 
+    d3.select("#button_new_game").on("click", function(d,i) { new_game(); } );
+
+    d3.select("#button_buy").on("click", function(d,i) { buy(); } );
+    d3.select("#button_sell").on("click", function(d,i) { sell(); } );
 </script>
 
-<script type='text/javascript' src='templates/apis.js'></script>
+
+
+<script>
+    function reload_or_newgame() {  // for load only
+        data_file = "{{url_for('static', filename=data_file)}}";
+        d3.request('http://localhost:9000/reload_or_newgame')
+            .get(function(d) {
+                console.log(d);
+                mydict = JSON.parse(d.responseText);
+
+                fund = mydict.fund;  // suppose global
+                symbol = mydict.symbol;
+
+                console.log(mydict);
+            } );
+        load_data(data_file);
+    }
+    window.onload = reload_or_newgame;
+</script>
+
+
+<script type='text/javascript'  src={{ url_for('static', filename='apis.js') }} ></script>

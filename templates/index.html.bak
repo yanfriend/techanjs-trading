@@ -1,1 +1,451 @@
-<h1>Hello World!</h1>
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+    body {
+        font: 10px sans-serif;
+    }
+
+    text {
+        fill: #000;
+    }
+
+    path.candle {
+        stroke: #000000;
+    }
+
+    path.candle.body {
+        stroke-width: 0;
+    }
+
+    path.candle.up {
+        fill: #00AA00;
+        stroke: #00AA00;
+    }
+
+    path.candle.down {
+        fill: #FF0000;
+        stroke: #FF0000;
+    }
+
+    path.ohlc {
+        stroke: #000000;
+        stroke-width: 1;
+    }
+
+    path.ohlc.up {
+        stroke: #00AA00;
+    }
+
+    path.ohlc.down {
+        stroke: #FF0000;
+    }
+
+
+    /*path.volume {
+        fill: #EEEEEE;
+    }*/
+    path.volume {
+        fill: #EEEEEE;
+        opacity: 0.5;
+    }
+
+    path.volume.up {
+        fill: #EEEEEE;
+    }
+
+    path.volume.down {
+        fill: #EEEEEE;
+    }
+
+
+    path.line {
+        fill: none;
+        stroke: #BF5FFF;
+        stroke-width: 1;
+    }
+
+    .extent {
+        stroke: #fff;
+        fill-opacity: .125;
+        shape-rendering: crispEdges;
+    }
+
+    .crosshair {
+        cursor: crosshair;
+    }
+
+    .crosshair path.wire {
+        stroke: #DDDDDD;
+        stroke-dasharray: 1, 1;
+    }
+
+    .crosshair .axisannotation path {
+        fill: #DDDDDD;
+    }
+
+    .y.annotation.right path {
+        fill: #FF0000;
+    }
+
+    .x.annotation path {
+        fill: #DDD80E;
+    }
+
+{#  below for trade arrow #}
+
+    path.tradearrow {
+        stroke: none;
+    }
+
+    path.tradearrow.buy {
+        fill: #0000FF;
+    }
+
+    path.tradearrow.buy-pending {
+        fill-opacity: 0.2;
+        stroke: #0000FF;
+        stroke-width: 1.5;
+    }
+
+    path.tradearrow.sell {
+        fill: #9900FF;
+    }
+
+    .tradearrow path.highlight {
+        fill: none;
+        stroke-width: 2;
+    }
+
+    .tradearrow path.highlight.buy,.tradearrow path.highlight.buy-pending {
+        stroke: #0000FF;
+    }
+
+    .tradearrow path.highlight.buy-pending {
+        fill: #0000FF;
+        fill-opacity: 0.3;
+    }
+
+    .tradearrow path.highlight.sell {
+        stroke: #9900FF;
+    }
+
+
+
+/*
+    button {
+        position: absolute;
+        right: 20px;
+        top: 440px;
+        display: none;
+    }*/
+
+</style>
+<body>
+
+<button id='button_new_game'>New Game</button>
+<br>
+
+<button id='button_next'>Next Bar</button>
+<button id='button_buy'>Buy</button>
+<button id='button_sell'>Sell</button> <br>
+
+<script src="http://d3js.org/d3.v4.min.js"></script>
+<script src="http://techanjs.org/techan.min.js"></script>
+<script>
+
+    var margin_main = {top: 20, right: 30, bottom: 200, left: 50},
+        margin_volume = {top: 420, right: 30, bottom: 100, left: 50},
+        margin_close = {top: 520, right: 30, bottom: 20, left: 50},
+
+
+        width_main = 960 - margin_main.left - margin_main.right,
+        height_main = 600 - margin_main.top - margin_main.bottom,
+
+        height_close = 600 - margin_close.top - margin_close.bottom;  // 500-420-20=60 pix
+        volume_close = 600 - margin_volume.top - margin_volume.bottom;  // 100 pix ?
+
+
+    // var parseDate = d3.timeParse("%d-%b-%y");  // e.g. 23-May-14
+    var parseDate = d3.timeParse("%Y-%m-%d");  // e.g. 1980-10-01
+
+    var x = techan.scale.financetime()
+            .range([0, width_main]);
+
+    var xClose = techan.scale.financetime()
+            .range([0, width_main]);
+
+    var y = d3.scaleLinear()
+            .range([height_main, 0]);
+
+    var yVolume = d3.scaleLinear()
+            .range([y(0), y(0.3)]);
+
+    var yClose = d3.scaleLinear()
+            .range([height_close, 0]);
+
+    var brush = d3.brushX()
+            .extent([[0, 0], [width_main, height_close]])
+            .on("brush end", brushed);
+
+    var candlestick = techan.plot.candlestick()
+            .xScale(x)
+            .yScale(y);
+
+    var volume = techan.plot.volume()
+            .accessor(candlestick.accessor())   // Set the accessor to a candlestick accessor so we get highlighted bars
+            .xScale(x)
+            .yScale(yVolume);
+
+    var volumeAxis = d3.axisRight(yVolume)
+            .ticks(3)
+            .tickFormat(d3.format(",.3s"));
+
+    var close = techan.plot.close()
+            .xScale(xClose)
+            .yScale(yClose);
+
+
+    var tradearrow = techan.plot.tradearrow()
+            .xScale(x)
+            .yScale(y)
+            .orient(function(d) { return d.type.startsWith("buy") ? "up" : "down"; })
+            .on("mouseenter", enter)
+            .on("mouseout", out);
+
+
+    var xAxis = d3.axisBottom(x);
+
+    var xAxis2 = d3.axisBottom(xClose);
+
+    var yAxis = d3.axisRight(y);
+
+    var yAxis2 = d3.axisRight(yClose)
+            .ticks(0);
+
+    var ohlcAnnotation = techan.plot.axisannotation()
+            .axis(yAxis)
+            .orient('left')  // cant to right ? width_main?
+            .format(d3.format(',.2f'));  // for crosshair
+
+    var ohlcRightAnnotation = techan.plot.axisannotation()  // for close price annotation
+            .axis(yAxis)
+            .orient('right')
+            .accessor(candlestick.accessor())
+            .format(d3.format(',.2f'));
+
+    var timeAnnotation = techan.plot.axisannotation()
+            .axis(xAxis)
+            .orient('bottom')
+            .format(d3.timeFormat('%Y-%m-%d'))
+            .width(65)
+            .translate([0, height_main]);
+
+    var volumeAnnotation = techan.plot.axisannotation()
+            .axis(volumeAxis)
+            .orient('right')
+            .width(35);
+
+    var crosshair = techan.plot.crosshair()
+            .xScale(x)
+            .yScale(y)
+            .xAnnotation(timeAnnotation)
+            .yAnnotation([ohlcAnnotation,volumeAnnotation]);
+
+    var svg = d3.select("body").append("svg")
+            .attr("width", width_main + margin_main.left + margin_main.right)
+            .attr("height", height_main + margin_main.top + margin_main.bottom);
+
+    var focus = svg.append("g")
+            .attr("class", "focus")
+            .attr("transform", "translate(" + margin_main.left + "," + margin_main.top + ")");
+
+    focus.append("clipPath")
+            .attr("id", "clip")
+        .append("rect")
+            .attr("x", 0)
+            .attr("y", y(1))
+            .attr("width", width_main)
+            .attr("height", y(0) - y(1));
+
+    focus.append("g")
+            .attr("class", "volume")
+            .attr("clip-path", "url(#clip)");
+
+    focus.append("g")
+            .attr("class", "candlestick")
+            .attr("clip-path", "url(#clip)");
+
+    focus.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height_main + ")");
+
+    focus.append("g")
+            .attr("class", "y axis")
+            .attr("transform", "translate(" + width_main + ")", 0)
+        .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Price ($)");
+
+    focus.append("g")
+            .attr("class", "y annotation right")
+            .attr("clip-path", "url(#clip)")
+            .attr("transform", "translate(" + width_main + ")", 0);
+
+    focus.append('g')
+            .attr("class", "crosshair")
+            .call(crosshair);
+
+    focus.append("g")
+            .attr("class", "tradearrow");
+
+
+    var context = svg.append("g")
+            .attr("class", "context")
+            .attr("transform", "translate(" + margin_close.left + "," + margin_close.top + ")");
+
+    context.append("g")
+            .attr("class", "close");
+
+    context.append("g")
+            .attr("class", "pane");
+
+    context.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height_close + ")");
+
+    context.append("g")
+            .attr("class", "y axis")
+            .attr("transform", "translate(" + width_main+")", 0) // move y axis to right
+            .call(yAxis2);
+
+    // var result = d3.csv("{{ url_for('static', filename='data.csv') }}", function(error, csv) {
+    //var result = d3.csv("{{ url_for('static', filename=data_file) }}", function(error, csv) {
+        var accessor = candlestick.accessor(),
+            timestart = Date.now();
+
+    var result = d3.csv("{{ url_for('static', filename=data_file) }}", function(error, csv) {
+
+        // feed is the whole data
+        feed = csv.map(function (d) {
+            factor = +d['Adj Close'] / +d.Close;
+
+            return {
+                date: parseDate(d.Date),
+                open: +d.Open * factor,
+                high: +d.High * factor,
+                low: +d.Low * factor,
+                close: +d["Adj Close"],
+                volume: +d.Volume  // leave it as it is so far.
+            };
+        }).sort(function (a, b) {
+            return d3.ascending(accessor.d(a), accessor.d(b));
+        });
+
+        data = feed.slice(0, 125); // make it global
+
+        trades = [
+            { date: data[5].date, type: "buy", price: data[5].close, quantity: 1000 },
+            { date: data[30].date, type: "sell", price: data[30].close, quantity: 200 },
+        ];
+
+
+    });
+
+
+        d3.select("#button_next").on("click", function() {
+              if(data.length < feed.length) {
+                  // Simulate a daily feed
+                  data = feed.slice(0, data.length+1);
+              }
+              console.log(data.length);
+
+        x.domain(data.map(accessor.d));
+        xClose.domain(x.domain());
+        y.domain(techan.scale.plot.ohlc(data, accessor).domain());
+        yClose.domain(y.domain());
+        yVolume.domain(techan.scale.plot.volume(data).domain());
+
+        focus.select("g.candlestick").datum(data);
+        focus.select("g.volume").datum(data);
+
+        context.select("g.close").datum(data).call(close);
+        context.select("g.x.axis").call(xAxis2);
+
+        brush_pix = 69*width_main/data.length; // 69 is bar to show
+        // Associate the brush with the scale and render the brush only AFTER a domain has been applied
+        context.select("g.pane")
+          .call(brush)
+          .call(brush.move, [width_main-brush_pix,width_main])  // set initial brush rect.
+          .selectAll("rect").attr("height", height_close);
+
+        // Associate the brush with the scale and render the brush only AFTER a domain has been applied
+        context.select("g.pane").call(brush).selectAll("rect").attr("height", height_close); // seems no use
+
+        // x.zoomable().domain(xClose.zoomable().domain());  // comment out, or xClose set to whole one.
+        draw();
+
+        }).style("display", "inline");
+
+        // todo, send a button click
+        console.log("Render time: " + (Date.now()-timestart));
+    //});
+
+    function brushed() {
+        var zoomable = x.zoomable(),
+            zoomable2 = xClose.zoomable();
+
+        zoomable.domain(zoomable2.domain());
+        if(d3.event.selection !== null) zoomable.domain(d3.event.selection.map(zoomable.invert));
+        draw();
+    }
+
+    function draw() {
+        var candlestickSelection = focus.select("g.candlestick"),
+            data = candlestickSelection.datum();
+        y.domain(techan.scale.plot.ohlc(data.slice.apply(data, x.zoomable().domain()), candlestick.accessor()).domain());
+        candlestickSelection.call(candlestick);
+        focus.select("g.volume").call(volume);
+        // using refresh method is more efficient as it does not perform any data joins
+        // Use this if underlying data is not changing
+//        svg.select("g.candlestick").call(candlestick.refresh);
+        focus.select("g.x.axis").call(xAxis);
+        focus.select("g.y.axis").call(yAxis);
+        focus.select("g.volume.axis").call(volumeAxis);
+
+        focus.select("g.y.annotation.right").datum([data[data.length-1]]).call(ohlcRightAnnotation);  // show close price
+
+        focus.select("g.tradearrow").datum(trades).call(tradearrow); // show trade arrow
+
+    }
+
+    // for trade arrows
+    function enter(d) {
+        valueText.style("display", "inline");
+        refreshText(d);
+    }
+    function out() {
+        valueText.style("display", "none");
+    }
+    function refreshText(d) {
+        valueText.text("Trade: " + dateFormat(d.date) + ", " + d.type + ", " + valueFormat(d.price));
+    }
+
+
+
+    var trades, fund, symbol, positoin, entry_price;  // global
+
+
+
+    d3.select("#button_new_game").on("click", function(d,i) { new_game(); } );
+
+    d3.select("#button_buy").on("click", function(d,i) { buy(); } );
+    d3.select("#button_sell").on("click", function(d,i) { sell(); } );
+
+
+</script>
+
+<script type='text/javascript' src='templates/apis.js'></script>
