@@ -58,7 +58,7 @@
         fill: #EEEEEE;
     }
 
-
+{#  stroke may change color, green or red, todo: remove it #}
     path.line {
         fill: none;
         stroke: #BF5FFF;
@@ -130,6 +130,17 @@
         stroke: #9900FF;
     }
 
+{#  for trade line  #}
+    path.tradeline {
+        fill: 'green';
+        stroke: #BF5FFF;
+        stroke-width: 1;
+    }
+    .tradeline {
+        fill: 'green';
+        stroke: #BF5FFF;
+        stroke-width: 1;
+    }
 
 
 /*
@@ -143,7 +154,7 @@
 </style>
 <body>
 
-<button id='button_new_game'>New Game</button>
+<button id='button_new_game' style="float: right;">New Game</button>
 <br>
 
 <button id='button_next'>Next Bar</button>
@@ -211,6 +222,16 @@
             .yScale(y)
             .orient(function(d) { return d.type.startsWith("buy") ? "up" : "down"; })
 
+    var tradeline = d3.line();
+{#            .xScale(x)#}
+{#            .yScale(y)#}
+{#            .attr('x1', function(d) { return x1(d.entry.date); })#}
+{#            .attr('y1', function(d) { return y1(d.entry.price); })#}
+{#            .attr('x2', function(d) { return x2(d.exit.date); })#}
+{#            .attr('y2', function(d) { return y2(d.exit.price); })#}
+{#            ;#}
+
+    {#            .orient(function(d) { return d.type.startsWith("buy") ? "up" : "down"; })#}
 
 
     var xAxis = d3.axisBottom(x);
@@ -301,6 +322,11 @@
     focus.append("g")
             .attr("class", "tradearrow");
 
+{#    focus.append("g")#}
+{#            .attr("class", "tradeline");#}
+{#            .attr("clip-path", "url(#clip)")#}
+{#            .attr("transform", "translate(" + width_main + ")", 0);#}
+
 
     var context = svg.append("g")
             .attr("class", "context")
@@ -330,6 +356,14 @@
         if(data.length < feed.length) {
             data = feed.slice(0, data.length+1);
         }
+
+        if (portifolio==='buy') {
+            var last_entry = linetrades.pop();
+            last_data = data[data.length-1];
+            last_entry['exit'] = {date: last_data['date'], type: 'sell', price: last_data['close']};
+            linetrades.push(last_entry);
+        }
+        console.log(linetrades);
 
         x.domain(data.map(accessor.d));
         xClose.domain(x.domain());
@@ -384,14 +418,30 @@
 
         focus.select("g.y.annotation.right").datum([data[data.length-1]]).call(ohlcRightAnnotation);  // show close price
 
-        console.log(trades);
         focus.select("g.tradearrow").datum(trades).call(tradearrow); // show trade arrow
 
+
+        console.log(linetrades);
+
+        focus.selectAll("line")// this has issue, need to comment for real run.
+                .remove();
+        //focus.selectAll("g.tradeline")// this has issue, need to comment for real run. working
+        focus.selectAll("line")// this has issue, need to comment for real run.
+                .data(linetrades)
+                .enter()
+                  .append('line') // .append("tradeline")
+                .attr('x1', function(d) { return x(d.entry.date); })
+                .attr('y1', function(d) { return y(d.entry.price); })
+                .attr('x2', function(d) { return x(d.exit.date); })
+                .attr('y2', function(d) { return y(d.exit.price); })
+                .attr("stroke-width", 1)
+                .attr("stroke", 'green')
+                ;
     }
 
     console.log("{{  data_file }}");
 
-    var trades, fund, symbol, positoin, entry_price;  // global
+    var trades, linetrades, fund, symbol, positoin, entry_price, portifolio;  // global
 
 
     d3.select("#button_new_game").on("click", function(d,i) { new_game(); } );
@@ -399,6 +449,11 @@
     d3.select("#button_buy").on("click", function(d,i) { buy(); } );
     d3.select("#button_sell").on("click", function(d,i) { sell(); } );
 </script>
+
+
+
+
+
 
 
 
