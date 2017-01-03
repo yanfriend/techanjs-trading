@@ -152,7 +152,10 @@
     }*/
 
 </style>
+
 <body>
+<script src="http://d3js.org/d3.v4.min.js"></script>
+<script src="http://techanjs.org/techan.min.js"></script>
 
 <button id='button_new_game' style="float: right;">New Game</button>
 <br>
@@ -160,10 +163,92 @@
 <button id='button_next'>Next Bar</button>
 <button id='button_buy'>Buy</button>
 <button id='button_sell'>Sell</button> <br>
+<br>
 
-<script src="http://d3js.org/d3.v4.min.js"></script>
-<script src="http://techanjs.org/techan.min.js"></script>
 <script>
+    function draw_table_head() {
+      var columns = ["B/S", "Entry Price", "Exit Price",
+          "Holding Days",
+          "Gain%", "Max Drawdown%"];
+      var table = d3.select("body")
+              .append("table")
+              .attr("border",1);
+      var thead = table.append("thead");
+      var tbody = table.append("tbody");
+
+      thead.append("tr")
+        .selectAll("th")
+        .data(columns)
+        .enter()
+        .append("th")
+        .text(function(column) { return column; });
+
+    }
+
+  function draw_table_rows() {
+
+    var newdata = [
+      {"B/S":"buy",
+       "Entry Price": "100",
+       "Exit Price": 200,
+       "Holding Days":15,
+       "Gain%" : 85,
+       "Max Drawdown%": -10
+      },
+      {"B/S":"buy",
+       "Entry Price": "12",
+       "Exit Price": 20,
+       "Holding Days":34,
+       "Gain%" : 90,
+       "Max Drawdown%": -8
+      },
+    ]
+
+    var rows = d3.selectAll("body table").selectAll("tbody tr")
+        .data(newdata, function (d) {return d['B/S'];});
+
+    rows.enter()
+        .append('tr')
+        .selectAll("td")
+        .data(function (d) {return [d['B/S'],
+                                    d['Entry Price'],
+                                    d['Exit Price'],
+                                    d['Holding Days'],
+                                    d['Gain%'],
+                                    d['Max Drawdown%']
+                                    ];})
+        .enter()
+        .append("td")
+        .text(function(d) { return d; });
+
+    rows.exit().remove();
+
+    var cells = rows.selectAll('td')
+        .data(function (d) {return [d['B/S'],
+                                    d['Entry Price'],
+                                    d['Exit Price'],
+                                    d['Holding Days'],
+                                    d['Gain%'],
+                                    d['Max Drawdown%']
+                                    ];})
+        .text(function (d) {return d;});
+
+    cells.enter()
+        .append("td")
+        .text(function(d) { return d; });
+
+    cells.exit().remove();
+  }
+
+
+</script>
+
+<script>
+
+
+    draw_table_head();
+    draw_table_rows();
+
 
     var margin_main = {top: 20, right: 30, bottom: 200, left: 50},
         margin_volume = {top: 420, right: 30, bottom: 100, left: 50},
@@ -449,11 +534,6 @@
     d3.select("#button_buy").on("click", function(d,i) { buy(); } );
     d3.select("#button_sell").on("click", function(d,i) { sell(); } );
 </script>
-
-
-
-
-
 
 
 
