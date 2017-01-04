@@ -142,14 +142,25 @@
         stroke-width: 1;
     }
 
+    table {
+        border-collapse: collapse;
+        border: 2px black solid;
+        font: 11px sans-serif;
 
-/*
-    button {
-        position: absolute;
-        right: 20px;
-        top: 440px;
-        display: none;
-    }*/
+{#        remove below, right align#}
+{#        width: auto;#}
+{#        margin-right: 0px;#}
+{#        margin-left: auto;#}
+    }
+
+    td, th {
+        border: 1px black solid;
+        padding: 5px;
+    }
+
+    th {
+        font-weight: bold;
+    }
 
 </style>
 
@@ -157,22 +168,27 @@
 <script src="http://d3js.org/d3.v4.min.js"></script>
 <script src="http://techanjs.org/techan.min.js"></script>
 
-<button id='button_new_game' style="float: right;">New Game</button>
-<br>
-
 <button id='button_next'>Next Bar</button>
 <button id='button_buy'>Buy</button>
-<button id='button_sell'>Sell</button> <br>
-<br>
+<button id='button_sell'>Sell</button>
+<button id='button_new_game' style="float: right;">New Game</button> <br>
 
 <script>
+
+    var trades, linetrades, fund, symbol, positoin, entry_price, portifolio;  // global
+    var row_data=[];
+
     function draw_table_head() {
-      var columns = ["B/S", "Entry Price", "Exit Price",
+      var columns = [
+          "Buy/Short",
+          "Entry Price",
+          "Exit/Curr Price",
           "Holding Days",
-          "Gain%", "Max Drawdown%"];
+          "Gain%",
+          "Max Drawdown%"
+      ];
       var table = d3.select("body")
-              .append("table")
-              .attr("border",1);
+              .append("table");
       var thead = table.append("thead");
       var tbody = table.append("tbody");
 
@@ -182,73 +198,55 @@
         .enter()
         .append("th")
         .text(function(column) { return column; });
-
     }
 
   function draw_table_rows() {
+    if (row_data.length==0)
+            return;
 
-    var newdata = [
-      {"B/S":"buy",
-       "Entry Price": "100",
-       "Exit Price": 200,
-       "Holding Days":15,
-       "Gain%" : 85,
-       "Max Drawdown%": -10
-      },
-      {"B/S":"buy",
-       "Entry Price": "12",
-       "Exit Price": 20,
-       "Holding Days":34,
-       "Gain%" : 90,
-       "Max Drawdown%": -8
-      },
-    ]
+    d3.selectAll("body table")// delete all in tbody.
+            .selectAll("tbody tr")
+            .remove();
 
-    var rows = d3.selectAll("body table").selectAll("tbody tr")
-        .data(newdata, function (d) {return d['B/S'];});
+    var tbody = d3.selectAll("body table").selectAll("tbody");
 
-    rows.enter()
-        .append('tr')
-        .selectAll("td")
-        .data(function (d) {return [d['B/S'],
-                                    d['Entry Price'],
-                                    d['Exit Price'],
-                                    d['Holding Days'],
-                                    d['Gain%'],
-                                    d['Max Drawdown%']
-                                    ];})
+    // Create a row for each object in the data
+      var reversed = row_data.slice().reverse();
+    var rows = tbody.selectAll("tr")
+        .data(reversed)
         .enter()
-        .append("td")
-        .text(function(d) { return d; });
+        .append("tr");
 
-    rows.exit().remove();
-
+    // Create a cell in each row for each column
     var cells = rows.selectAll('td')
-        .data(function (d) {return [d['B/S'],
+        .data(function (d) {return [d['buysell'],
                                     d['Entry Price'],
                                     d['Exit Price'],
                                     d['Holding Days'],
                                     d['Gain%'],
                                     d['Max Drawdown%']
                                     ];})
-        .text(function (d) {return d;});
+        .text(function (d) {return d;})
+            ;
 
     cells.enter()
         .append("td")
-        .text(function(d) { return d; });
-
-    cells.exit().remove();
+        .text(function(d) { return d; })
+        .style("background-color",function(d,i) {
+                if (i==5)
+                   return '#ff9999';  // red
+                if (i==4) {
+                   if (d<0) { return '#ff9999'; }
+                    else { return '#00cc00'; } // green
+                }
+            })
+    ;
   }
 
 
 </script>
 
 <script>
-
-
-    draw_table_head();
-    draw_table_rows();
-
 
     var margin_main = {top: 20, right: 30, bottom: 200, left: 50},
         margin_volume = {top: 420, right: 30, bottom: 100, left: 50},
@@ -447,8 +445,18 @@
             last_data = data[data.length-1];
             last_entry['exit'] = {date: last_data['date'], type: 'sell', price: last_data['close']};
             linetrades.push(last_entry);
+
+            // update row_data last entity values
+            var in_trade = row_data.pop();
+            in_trade['Exit Price'] = last_data['close'].toFixed(2);
+            //in_trade['Holding Days'] = Math.trunc((last_data['date']-in_trade['date'])/(1000*60*60*24));
+            in_trade['Holding Days'] = data.length-1 -in_trade['date_index'];
+            in_trade['Gain%'] = ((last_data['close']-in_trade['Entry Price'])/in_trade['Entry Price'] * 100).toFixed(2);
+            in_trade['Max Drawdown%'] = Math.min(in_trade['Max Drawdown%'],
+                    ((last_data['close']-in_trade['Entry Price'])/in_trade['Entry Price'] * 100).toFixed(2)
+                                                 );
+            row_data.push(in_trade);
         }
-        console.log(linetrades);
 
         x.domain(data.map(accessor.d));
         xClose.domain(x.domain());
@@ -506,8 +514,6 @@
         focus.select("g.tradearrow").datum(trades).call(tradearrow); // show trade arrow
 
 
-        console.log(linetrades);
-
         focus.selectAll("line")// this has issue, need to comment for real run.
                 .remove();
         //focus.selectAll("g.tradeline")// this has issue, need to comment for real run. working
@@ -522,17 +528,20 @@
                 .attr("stroke-width", 1)
                 .attr("stroke", 'green')
                 ;
+
+        draw_table_rows();
     }
 
     console.log("{{  data_file }}");
-
-    var trades, linetrades, fund, symbol, positoin, entry_price, portifolio;  // global
-
 
     d3.select("#button_new_game").on("click", function(d,i) { new_game(); } );
 
     d3.select("#button_buy").on("click", function(d,i) { buy(); } );
     d3.select("#button_sell").on("click", function(d,i) { sell(); } );
+
+    draw_table_head();
+    draw_table_rows();
+
 </script>
 
 
@@ -542,13 +551,10 @@
         data_file = "{{url_for('static', filename=data_file)}}";
         d3.request('http://localhost:9000/reload_or_newgame')
             .get(function(d) {
-                console.log(d);
                 mydict = JSON.parse(d.responseText);
 
                 fund = mydict.fund;  // suppose global
                 symbol = mydict.symbol;
-
-                console.log(mydict);
             } );
         load_data(data_file);
     }

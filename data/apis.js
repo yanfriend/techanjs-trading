@@ -16,8 +16,19 @@ function buy() {
     trades.push({date:last_data['date'], type:'buy', price:last_data['close']});
     linetrades.push({
         entry: {date: last_data['date'], type: 'buy', price: last_data['close']},
-        exit: {date: last_data['date'], type: 'buy', price: last_data['close']}
+        exit: {date: last_data['date'], type: 'sell', price: last_data['close']}
     });
+
+    row_data.push(
+        {"buysell":"Buy",
+         "Entry Price": entry_price.toFixed(2),
+         "Exit Price": entry_price.toFixed(2),
+         "Holding Days":0,
+         "Gain%" : 0,
+         "Max Drawdown%": 0,
+         "date_index":data.length-1
+        }
+    );
 
     d3.request('http://localhost:9000/buy')
         .get(function() {} );
@@ -64,16 +75,17 @@ function load_data(data_file) {
 
         data = feed.slice(0, 125); // make it global
 
-        trades = [
-            { date: data[60].date, type: "buy", price: data[60].close},
-            { date: data[100].date, type: "sell", price: data[100].close},
-        ];
-
-        linetrades = [
-            { entry:{ date: data[60].date, type: "buy", price: data[60].close},
-              exit: { date: data[100].date, type: "sell", price: data[100].close}
-            },
-        ];
-
+        trades=[];
+        linetrades=[];
+        //trades = [
+        //    { date: data[60].date, type: "buy", price: data[60].close},
+        //    { date: data[100].date, type: "sell", price: data[100].close},
+        //];
+        //
+        //linetrades = [
+        //    { entry:{ date: data[60].date, type: "buy", price: data[60].close},
+        //      exit: { date: data[100].date, type: "sell", price: data[100].close}
+        //    },
+        //];
     });
 }
