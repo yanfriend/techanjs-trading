@@ -470,7 +470,7 @@
         context.select("g.close").datum(data).call(close);
         context.select("g.x.axis").call(xAxis2);
 
-        brush_pix = 69*width_main/data.length; // 69 is bar to show
+        brush_pix = 69*width_main/data.length; // 69 is bar to show, window width
         // Associate the brush with the scale and render the brush only AFTER a domain has been applied
         context.select("g.pane")
           .call(brush)
@@ -532,7 +532,7 @@
         draw_table_rows();
     }
 
-    console.log("{{  data_file }}");
+    // console.log("{{  data_file }}");
 
     d3.select("#button_new_game").on("click", function(d,i) { new_game(); } );
 
@@ -548,15 +548,25 @@
 
 <script>
     function reload_or_newgame() {  // for load only
-        data_file = "{{url_for('static', filename=data_file)}}";
         d3.request('http://localhost:9000/reload_or_newgame')
             .get(function(d) {
                 mydict = JSON.parse(d.responseText);
 
                 fund = mydict.fund;  // suppose global
                 symbol = mydict.symbol;
+
+
+                filename = symbol+".csv";
+                console.log(filename);
+
+                data_file = "{{url_for('static', filename='filename')}}";
+                data_file = data_file.replace('filename', filename);
+                console.log(data_file);
+
+                load_data(data_file);
+
             } );
-        load_data(data_file);
+
     }
     window.onload = reload_or_newgame;
 </script>

@@ -11,7 +11,7 @@ app = Flask(__name__, static_folder='data')
 
 @app.route("/")
 def index():
-    return render_template("index.html", data_file='IBM.csv')
+    return render_template("index.html")
 
 
 @app.route("/buy")
@@ -51,9 +51,9 @@ def new_game():
 def reload_or_newgame():
     print 'you are in reload_or_newgame web service: write into db.'
 
-    # if no open round for the latest game, new a game.
-
-    game_view = GameView(fund=100000, symbol='IBM')
+    # passs in a different symbol, and date? to init a new game.
+    game_view = GameView(fund=100000,
+                         symbol='IBM')
 
     return json.dumps(game_view.__dict__)
 
