@@ -1,10 +1,19 @@
 import datetime
+import fnmatch
 import json
+import os
+import random
 
 from flask import Flask
 from flask import render_template
 
 from apis.rounds import Game, Strategy, GameView
+
+
+BEFORE_WINDOW = 602
+WINDOW = 69
+AFTER_WINDOW = 87
+
 
 app = Flask(__name__, static_folder='data')
 
@@ -49,13 +58,54 @@ def new_game():
 
 @app.route("/reload_or_newgame")
 def reload_or_newgame():
+    """
+    reload or new game depending on last status.
+    :return:
+    """
     print 'you are in reload_or_newgame web service: write into db.'
 
-    # passs in a different symbol, and date? to init a new game.
-    game_view = GameView(fund=100000,
-                         symbol='IBM')
+    # get last fund,
+    # generate symbol according to strategy
+    # write status to db.
+
+    # if no last situation, return new_game()
+
+    fund = 100000
+    symbol, start_index, end_index = random_strategy()
+
+    game_view = GameView(fund=fund,
+                         symbol=symbol,
+                         start_index=start_index,
+                         end_index=end_index)
 
     return json.dumps(game_view.__dict__)
+
+
+def random_strategy(fix_period=False):
+    # got all filenames, random select one.
+    folder = './data'
+    all_names = []
+    for file in os.listdir(folder):
+        if fnmatch.fnmatch(file, '*.csv'):
+            all_names.append(file)  # ZG.csv
+
+    print(len(all_names))
+
+    while(True):
+        a_file = random.choice(all_names)
+        print(a_file)
+
+        with open(os.path.join(folder, a_file)) as f:
+            for row_count, l in enumerate(f): # row_count if rows -1
+                pass
+
+        window_len = BEFORE_WINDOW + WINDOW + AFTER_WINDOW
+        if row_count < window_len:
+            continue
+
+        start_index = random.randint(0, row_count - window_len)
+        end_index = start_index+window_len if fix_period else row_count-1
+        return a_file.replace('.csv',''), start_index, end_index
 
 
 if __name__ == "__main__":

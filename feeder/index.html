@@ -77,17 +77,31 @@
 <script src="http://techanjs.org/techan.min.js"></script>
 <script>
 
+    // var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    //         width = 960 - margin.left - margin.right,
+    //         height = 500 - margin.top - margin.bottom;
     var margin = {top: 20, right: 20, bottom: 30, left: 50},
-            width = 960 - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
+        margin2 = {top: 420, right: 20, bottom: 20, left: 50},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom,
+        height2 = 500 - margin2.top - margin2.bottom;
+
 
     var parseDate = d3.timeParse("%d-%b-%y");
 
     var x = techan.scale.financetime()
             .range([0, width]);
+    var x2 = techan.scale.financetime()
+            .range([0, width]);
 
     var y = d3.scaleLinear()
             .range([height, 0]);
+    var y2 = d3.scaleLinear()
+            .range([height2, 0]);
+
+    var brush = d3.brushX()
+            .extent([[0, 0], [width, height2]])
+            .on("brush end", brushed);
 
     var yVolume = d3.scaleLinear()
             .range([y(0), y(0.2)]);
@@ -141,20 +155,34 @@
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom);
 
-    var defs = svg.append("defs");
+    var focus = svg.append("g")
+            .attr("class", "focus")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    defs.append("clipPath")
+    // var defs = svg.append("defs");
+
+    // defs.append("clipPath")
+    //         .attr("id", "ohlcClip")
+    //     .append("rect")
+    //         .attr("x", 0)
+    //         .attr("y", 0)
+    //         .attr("width", width)
+    //         .attr("height", height);
+
+
+    focus.append("clipPath")
             .attr("id", "ohlcClip")
         .append("rect")
             .attr("x", 0)
-            .attr("y", 0)
+            .attr("y", y(1))
             .attr("width", width)
-            .attr("height", height);
+            .attr("height", y(0) - y(1));
 
-    svg = svg.append("g")
-            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    var ohlcSelection = svg.append("g")
+    // svg = svg.append("g")
+    //         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var ohlcSelection = focus.append("g")
             .attr("class", "ohlc")
             .attr("transform", "translate(0,0)");
 
@@ -166,11 +194,11 @@
             .attr("class", "candlestick")
             .attr("clip-path", "url(#ohlcClip)");
 
-    svg.append("g")
+    focus.append("g")
             .attr("class", "x axis")
             .attr("transform", "translate(0," + height + ")");
 
-    svg.append("g")
+    focus.append("g")
             .attr("class", "y axis")
         .append("text")
             .attr("transform", "rotate(-90)")
@@ -179,17 +207,45 @@
             .style("text-anchor", "end")
             .text("Price ($)");
 
-    svg.append("g")
+    focus.append("g")
             .attr("class", "volume axis");
 
-    svg.append('g')
+    focus.append('g')
             .attr("class", "crosshair ohlc");
 
-    var coordsText = svg.append('text')
+    var coordsText = focus.append('text')
             .style("text-anchor", "end")
             .attr("class", "coords")
             .attr("x", width - 5)
             .attr("y", 15);
+
+
+    var context = svg.append("g")
+            .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+    context.append("g")
+            .attr("class", "close");
+
+    context.append("g")
+            .attr("class", "pane");
+
+    context.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height2 + ")");
+
+    context.append("g")
+            .attr("class", "y axis")
+            .attr("transform", "translate(" + width + ")", 0)
+            .call(y2);
+
+    context.append("g")
+            .attr("class", "brush")
+            .call(brush)
+            .call(brush.move, [100,200])
+          .selectAll("rect")
+            .attr("y", -6)
+            .attr("height", height2 + 7);
+
 
     var feed;
 
@@ -231,6 +287,25 @@
         }).style("display", "inline");
     });
 
+    // define our brush extent to be begin and end of the year
+    brush.extent([new Date('17-Jan-14'), new Date('17-Oct-14')])
+
+    // now draw the brush to match our extent
+    // use transition to slow it down so we can see what is happening
+    // remove transition so just d3.select(".brush") to just draw
+    // brush(d3.select(".brush"));
+
+    // now fire the brushstart, brushmove, and brushend events
+    // remove transition so just d3.select(".brush") to just draw
+    //brush.event(d3.select(".brush"))
+    // d3.select(".brush")
+
+    //svg.append("g")
+    //.attr("class", "brush")
+    //.call(brush)
+    //d3.select("g.brush")
+    //.call(brush.event);
+
     function redraw(data) {
         var accessor = ohlc.accessor();
 
@@ -256,32 +331,19 @@
 
                 svg.select("g.crosshair.ohlc").call(crosshair);
             });
-
-        // // Set next timer expiry
-        // setTimeout(function() {
-        //     var newData;
-        //
-        //     if(data.length < feed.length) {
-        //         // Simulate a daily feed
-        //         newData = feed.slice(0, data.length+1);
-        //     }
-        //     else {
-        //         // Simulate intra day updates when no feed is left
-        //         var last = data[data.length-1];
-        //         // Last must be between high and low
-        //         last.close = Math.round(((last.high - last.low)*Math.random())*10)/10+last.low;
-        //
-        //         newData = data;
-        //     }
-        //
-        //     redraw(newData);
-        // }, (Math.random()*1000)+400); // Randomly pick an interval to update the chart
     }
 
     function move(coords) {
         coordsText.text(
                 timeAnnotation.format()(coords.x) + ", " + ohlcAnnotation.format()(coords.y)
         );
+    }
+
+    function brushed() {
+      // x.domain(brush.empty() ? x2.domain() : brush.extent());
+      x.domain(x2.domain())
+      focus.select("ohlc").attr("d", ohlc);
+      focus.select("g.x.axis").call(xAxis);
     }
 
 </script>

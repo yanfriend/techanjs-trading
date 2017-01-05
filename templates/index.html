@@ -175,8 +175,20 @@
 
 <script>
 
-    var trades, linetrades, fund, symbol, positoin, entry_price, portifolio;  // global
+    var arrowtrades, linetrades, fund, symbol, entry_price, portfolio, end_index;  // global
     var row_data=[];
+
+    var BEFORE_WINDOW = 602,
+        WINDOW = 69,
+        AFTER_WINDOW = 87;
+
+    function init_global() {
+        arrowtrades=[];
+        linetrades=[];
+        row_data=[];
+
+        portfolio='';
+    }
 
     function draw_table_head() {
       var columns = [
@@ -201,12 +213,13 @@
     }
 
   function draw_table_rows() {
-    if (row_data.length==0)
-            return;
 
     d3.selectAll("body table")// delete all in tbody.
             .selectAll("tbody tr")
             .remove();
+
+    if (row_data.length==0)
+            return;
 
     var tbody = d3.selectAll("body table").selectAll("tbody");
 
@@ -440,7 +453,7 @@
             data = feed.slice(0, data.length+1);
         }
 
-        if (portifolio==='buy') {
+        if (portfolio==='buy') {
             var last_entry = linetrades.pop();
             last_data = data[data.length-1];
             last_entry['exit'] = {date: last_data['date'], type: 'sell', price: last_data['close']};
@@ -511,7 +524,15 @@
 
         focus.select("g.y.annotation.right").datum([data[data.length-1]]).call(ohlcRightAnnotation);  // show close price
 
-        focus.select("g.tradearrow").datum(trades).call(tradearrow); // show trade arrow
+        // todo, remove() first to init?? when arrowtrades is []
+        console.log('arrowtrades');
+        console.log(arrowtrades);
+
+        if (arrowtrades.length == 0) {
+            focus.selectAll("g.tradearrow").select("g.data").selectAll("path.tradearrow").remove();
+            // one class, one select, after . is attribute
+        }
+        focus.select("g.tradearrow").datum(arrowtrades).call(tradearrow); // show trade arrow
 
 
         focus.selectAll("line")// this has issue, need to comment for real run.
@@ -554,7 +575,8 @@
 
                 fund = mydict.fund;  // suppose global
                 symbol = mydict.symbol;
-
+                start_index = mydict.start_index;
+                end_index = mydict.end_index - start_index;  // global
 
                 filename = symbol+".csv";
                 console.log(filename);
@@ -563,7 +585,7 @@
                 data_file = data_file.replace('filename', filename);
                 console.log(data_file);
 
-                load_data(data_file);
+                load_data(data_file, start_index);
 
             } );
 

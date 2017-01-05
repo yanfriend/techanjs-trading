@@ -12,8 +12,8 @@ function buy() {
 
     entry_price = last_close;
 
-    portifolio = 'buy';
-    trades.push({date:last_data['date'], type:'buy', price:last_data['close']});
+    portfolio = 'buy';
+    arrowtrades.push({date:last_data['date'], type:'buy', price:last_data['close']});
     linetrades.push({
         entry: {date: last_data['date'], type: 'buy', price: last_data['close']},
         exit: {date: last_data['date'], type: 'sell', price: last_data['close']}
@@ -38,12 +38,12 @@ function sell() {
     console.log('in sell');
     last_data = data[data.length-1];
 
-    trades.push({date:last_data['date'], type:'sell', price:last_data['close']});
+    arrowtrades.push({date:last_data['date'], type:'sell', price:last_data['close']});
 
     var last_close = last_data['close'];
     exit_price = last_close;
     fund +=  position * last_close;
-    portifolio = '';
+    portfolio = '';
 
     d3.request('http://localhost:9000/sell')
         .get(function() {} );
@@ -51,12 +51,15 @@ function sell() {
 
 function new_game() {
     console.log('in new game');
-    d3.request('http://localhost:9000/new_game')
-        .get(function() {} );
+    //d3.request('http://localhost:9000/new_game')
+    //    .get(function() {} );
+
+    reload_or_newgame();
+
 }
 
 
-function load_data(data_file) {
+function load_data(data_file, start_index) {
     var result = d3.csv(data_file, function(error, csv) {
         feed = csv.map(function (d) {
             factor = +d['Adj Close'] / +d.Close;
@@ -73,11 +76,14 @@ function load_data(data_file) {
             return d3.ascending(accessor.d(a), accessor.d(b));
         });
 
-        data = feed.slice(0, 125); // make it global
+        feed = feed.slice(start_index);
+        data = feed.slice(0, BEFORE_WINDOW+WINDOW); // make it global
 
-        trades=[];
-        linetrades=[];
-        //trades = [
+        init_global();
+
+        d3.select("#button_next").on("click")();
+
+        //arrowtrades = [
         //    { date: data[60].date, type: "buy", price: data[60].close},
         //    { date: data[100].date, type: "sell", price: data[100].close},
         //];
