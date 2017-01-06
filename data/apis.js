@@ -32,6 +32,8 @@ function buy() {
 
     d3.request('http://localhost:9000/buy')
         .get(function() {} );
+
+    d3.select("#button_next").on("click")();
 }
 
 function sell() {
@@ -47,6 +49,9 @@ function sell() {
 
     d3.request('http://localhost:9000/sell')
         .get(function() {} );
+
+
+    d3.select("#button_next").on("click")();
 }
 
 function new_game() {
@@ -55,8 +60,9 @@ function new_game() {
     //    .get(function() {} );
 
     reload_or_newgame();
-
 }
+
+
 
 
 function load_data(data_file, start_index) {
