@@ -96,11 +96,19 @@ def get_strategies():
     return strategies # array of tuples
 
 
-@app.route('/get_game_candidates/<strategy_name>')  # should have a strategy parameter
+@app.route('/get_game_candidates/<strategy_name>')  # should have a strategy parameter, use id is better!!!
 def get_game_candidates(strategy_name):
-    print 'in web service get_game_candiates'
-    print strategy_name
-    return 'OK'
+    session = MySession.create()
+
+    symbols = session.query(Strategy.symbols) \
+        .filter(Strategy.removed_at.is_(None)) \
+        .order_by(Strategy.created.desc(), Strategy.id.desc()) \
+        .all()
+    print symbols
+
+    ret = symbols.split(',')
+    print ret
+    return ret # array of tuples
 
 
 def random_strategy(fix_period=False):
