@@ -7,17 +7,26 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
+class Account(Base):
+    __tablename__ = 'account'
+
+    id = Column(Integer, primary_key=True)
+
+    username = Column(Text, default='baifriend')
+    fund = Column(Float, default=100000)
+
+
 class Strategy(Base):
     __tablename__ = 'strategy'
 
     id = Column(Integer, primary_key=True)
+
+    name = Column(Text)  # with created, as select index
     created = Column(DateTime, default=func.now())
+    removed_at = Column(DateTime)
 
-    user_name = Column(String(16), default='baifriend')
-    fund = Column(Float, default=100000)  # 100k initial funding
-
-    note = Column(Text)
-    symbols = Column(Text)
+    note = Column(Text)  # secret comment
+    symbols = Column(Text)  # use csv format
 
 
 class Game(Base):
@@ -65,21 +74,41 @@ class GameView(object):
     def __init__(self, **kwargs):
         self.fund = kwargs.get('fund', 100000)
         self.symbol = kwargs.get('symbol', 'IBM')
+        self.start_index = kwargs.get('start_index', 1000)
+        self.end_index = kwargs.get('end_index', 1000000)
+        self.strategies = kwargs.get('strategies', [])
+
+
+class MySession:
+    my_session = None
+
+    @classmethod
+    def create(self):
+        if self.my_session is not None:
+            return self.my_session
+
+        engine = create_engine('mysql://root:@localhost:3306/chartgame', echo=True)
+        Session = sessionmaker()
+        Session.configure(bind=engine)
+        Base.metadata.create_all(engine)
+        self.my_session = Session()
+        return self.my_session
 
 
 if __name__ == "__main__":
-    engine = create_engine('mysql://root:@localhost:3306/chartgame', echo=True)
+    session = MySession.create()
 
-    Session = sessionmaker()
-    Session.configure(bind=engine)
-    Base.metadata.create_all(engine)
-    session = Session()
+    random_strategy = Strategy()
+    random_strategy.name = 'big index'
+    random_strategy.note = 'test'
+    random_strategy.symbols = 'IBM,SPY,DIA'
+    session.add(random_strategy)
+    session.commit()
+
 
     ibm = Game(symbol='IBM')
     round1 = Round(symbol='IBM')
-
     round1.game = ibm
-
     session.add(round1)
     session.commit()
 

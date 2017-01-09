@@ -1,3 +1,4 @@
+populate options with returned values
 0, random strategy, get rid of low vol price stocks
 1, flask apis
 2, seperate volume

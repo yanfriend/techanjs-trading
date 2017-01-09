@@ -63,8 +63,6 @@ function new_game() {
 }
 
 
-
-
 function load_data(data_file, start_index) {
     var result = d3.csv(data_file, function(error, csv) {
         feed = csv.map(function (d) {

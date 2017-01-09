@@ -171,7 +171,9 @@
 <button id='button_next'>Next Bar</button>
 <button id='button_buy'>Buy</button>
 <button id='button_sell'>Sell</button>
-<button id='button_new_game' style="float: right;">New Game</button> <br>
+<button id='button_new_game' style="float: right;">Random Game</button> <br>
+
+<div style='float:left'>
 
 <script>
 
@@ -448,6 +450,7 @@
     var accessor = candlestick.accessor(),
         timestart = Date.now();
 
+
     d3.select("#button_next").on("click", function() {  // called when Next clicked
         if(data.length < feed.length) {
             data = feed.slice(0, data.length+1);
@@ -509,6 +512,53 @@
         draw();
     }
 
+</script>
+
+    </div>
+    <div style='float:right'>
+        <br>
+        <br>
+
+        Strategies <br>
+        <select id="get_strategies_selection_id" onchange="get_game_candidates()">
+            <option value="1">s-1</option>
+            <option value="2">s-2</option>
+            <option value="3">s-3</option>
+        </select>
+
+        <br>
+        <br>
+
+        <!--<button id='get_candidates' onclick="get_game_candidates()">New Candidates</button> <br>-->
+
+        Game Candidates <br>
+        <select id="get_candidate_selection_id" onchange="symbol_to_file('IBM', 1000)">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+        </select>
+
+
+    </div>
+
+<script>
+    function get_game_candidates() {
+        d3.request('http://localhost:9000/get_game_candidates/random')
+                    .get(function(d) {
+                        console.log("call api and populate select options");
+                        <!--mydict = JSON.parse(d.responseText);-->
+
+                        <!--fund = mydict.fund;  // suppose global-->
+                        <!--symbol = mydict.symbol;-->
+                        <!--start_index = mydict.start_index;-->
+                        <!--end_index = mydict.end_index - start_index;  // global-->
+
+                        <!--symbol_to_file(symbol, start_index);-->
+                    } );
+
+
+    }
+
     function draw() {  // main drawing function
         var candlestickSelection = focus.select("g.candlestick"),
             data = candlestickSelection.datum();
@@ -553,8 +603,6 @@
         draw_table_rows();
     }
 
-    // console.log("{{  data_file }}");
-
     d3.select("#button_new_game").on("click", function(d,i) { new_game(); } );
 
     d3.select("#button_buy").on("click", function(d,i) { buy(); } );
@@ -568,6 +616,14 @@
 
 
 <script>
+    function symbol_to_file(symbol, start_index) {
+        filename = symbol+".csv";
+        data_file = "{{url_for('static', filename='filename')}}";
+        data_file = data_file.replace('filename', filename);
+
+        load_data(data_file, start_index);
+    }
+
     function reload_or_newgame() {  // for load only
         d3.request('http://localhost:9000/reload_or_newgame')
             .get(function(d) {
@@ -578,15 +634,11 @@
                 start_index = mydict.start_index;
                 end_index = mydict.end_index - start_index;  // global
 
-                filename = symbol+".csv";
-                console.log(filename);
+                strategies = mydict.strategies;  // populate options with these values.
+                console.log('strategies');
+                console.log(strategies);
 
-                data_file = "{{url_for('static', filename='filename')}}";
-                data_file = data_file.replace('filename', filename);
-                console.log(data_file);
-
-                load_data(data_file, start_index);
-
+                symbol_to_file(symbol, start_index);
             } );
 
     }
@@ -595,3 +647,5 @@
 
 
 <script type='text/javascript'  src={{ url_for('static', filename='apis.js') }} ></script>
+
+</body>

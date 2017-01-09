@@ -7,8 +7,7 @@ import random
 from flask import Flask
 from flask import render_template
 
-from apis.rounds import Game, Strategy, GameView
-
+from apis.db import Game, Strategy, GameView, MySession
 
 BEFORE_WINDOW = 602
 WINDOW = 69
@@ -73,12 +72,35 @@ def reload_or_newgame():
     fund = 100000
     symbol, start_index, end_index = random_strategy()
 
+    strategies = get_strategies()
+
     game_view = GameView(fund=fund,
                          symbol=symbol,
                          start_index=start_index,
-                         end_index=end_index)
-
+                         end_index=end_index,
+                         strategies=strategies,
+                         )
+    print json.dumps(game_view.__dict__)
     return json.dumps(game_view.__dict__)
+
+
+@app.route("/get_strategies")
+def get_strategies():
+    session = MySession.create()
+
+    strategies = session.query(Strategy.id, Strategy.name) \
+        .filter(Strategy.removed_at.is_(None)) \
+        .order_by(Strategy.created.desc(), Strategy.id.desc()) \
+        .all()
+
+    return strategies # array of tuples
+
+
+@app.route('/get_game_candidates/<strategy_name>')  # should have a strategy parameter
+def get_game_candidates(strategy_name):
+    print 'in web service get_game_candiates'
+    print strategy_name
+    return 'OK'
 
 
 def random_strategy(fix_period=False):
