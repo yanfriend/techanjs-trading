@@ -1,3 +1,4 @@
+import datetime
 from sqlalchemy import create_engine, Text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, DateTime, String, Integer, ForeignKey, func, Float
@@ -27,6 +28,10 @@ class Strategy(Base):
 
     note = Column(Text)  # secret comment
     symbols = Column(Text)  # use csv format
+
+    chart_start_date = Column(DateTime)
+    chart_end_date = Column(DateTime)
+    game_start_date = Column(DateTime)
 
 
 class Game(Base):
@@ -102,6 +107,8 @@ if __name__ == "__main__":
     random_strategy.name = 'big index'
     random_strategy.note = 'test'
     random_strategy.symbols = 'IBM,SPY,DIA'
+    random_strategy.chart_start_date = datetime.datetime(1985,1,1) # this will change to random
+
     session.add(random_strategy)
     session.commit()
 

@@ -99,19 +99,16 @@ def get_strategies():
 @app.route('/get_game_candidates/<strategy_id>')  # should have a strategy parameter, use id is better!!!
 def get_game_candidates(strategy_id):
     print strategy_id
-    return 'OK'  # ok here
 
     session = MySession.create()
 
-    symbols = session.query(Strategy.symbols) \
-        .filter(Strategy.removed_at.is_(None)) \
-        .order_by(Strategy.created.desc(), Strategy.id.desc()) \
-        .all()
+    s1 = session.query(Strategy).get(strategy_id)
+    symbols = s1.symbols
+    chart_start_date = s1.chart_start_date.strftime("%Y-%m-%d")
     print symbols
 
-    ret = symbols.split(',')
-    print ret
-    return ret # array of tuples
+    sym_list = symbols.split(',')
+    return json.dumps({'symbols':sym_list, 'chart_start_date':chart_start_date})
 
 
 def random_strategy(fix_period=False):

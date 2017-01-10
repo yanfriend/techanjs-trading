@@ -530,10 +530,7 @@
         <!--<button id='get_candidates' onclick="get_game_candidates()">New Candidates</button> <br>-->
 
         Game Candidates <br>
-        <select id="get_candidate_selection_id" onchange="symbol_to_file('IBM', 1000)">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
+        <select id="get_candidate_selection_id" onchange="symbol_to_file(this.value, 1000)">
         </select>
 
 
@@ -545,14 +542,25 @@
         d3.request('http://localhost:9000/get_game_candidates/'+strg_id)
                     .get(function(d) {
                         console.log("call api and populate select options");
-                        <!--mydict = JSON.parse(d.responseText);-->
 
-                        <!--fund = mydict.fund;  // suppose global-->
-                        <!--symbol = mydict.symbol;-->
+                        mydict = JSON.parse(d.responseText);
+                        console.log(mydict)
+
+                        symbols = mydict.symbols;
+                        chart_start_date = mydict.chart_start_date; // string
+
                         <!--start_index = mydict.start_index;-->
                         <!--end_index = mydict.end_index - start_index;  // global-->
 
                         <!--symbol_to_file(symbol, start_index);-->
+
+
+                        <!--// below is populate game selection-->
+                        var game_select = document.getElementById('get_candidate_selection_id');
+                        for(var i = 0, l = symbols.length; i < l; i++){
+                            var symbol = symbols[i];
+                            game_select.options.add( new Option(symbol, symbol) );
+                        }
                     } );
 
 
