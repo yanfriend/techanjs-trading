@@ -531,6 +531,7 @@
 
         Game Candidates <br>
         <select id="get_candidate_selection_id" onchange="symbol_to_file(this.value, 1000)">
+            <option value=""></option>
         </select>
 
 
@@ -540,28 +541,28 @@
     function get_game_candidates(strg_id) {
         console.log(strg_id);
         d3.request('http://localhost:9000/get_game_candidates/'+strg_id)
-                    .get(function(d) {
-                        console.log("call api and populate select options");
+            .get(function(d) {
+                console.log("call api and populate select options");
 
-                        mydict = JSON.parse(d.responseText);
-                        console.log(mydict)
+                mydict = JSON.parse(d.responseText);
+                console.log(mydict)
 
-                        symbols = mydict.symbols;
-                        chart_start_date = mydict.chart_start_date; // string
+                symbols = mydict.symbols;
+                chart_start_date = mydict.chart_start_date; // string
 
-                        <!--start_index = mydict.start_index;-->
-                        <!--end_index = mydict.end_index - start_index;  // global-->
+                <!--start_index = mydict.start_index;-->
+                <!--end_index = mydict.end_index - start_index; -->
 
-                        <!--symbol_to_file(symbol, start_index);-->
+                <!--symbol_to_file(symbol, start_index);-->
 
 
-                        <!--// below is populate game selection-->
-                        var game_select = document.getElementById('get_candidate_selection_id');
-                        for(var i = 0, l = symbols.length; i < l; i++){
-                            var symbol = symbols[i];
-                            game_select.options.add( new Option(symbol, symbol) );
-                        }
-                    } );
+                <!--// below is populate game selection-->
+                var game_select = document.getElementById('get_candidate_selection_id');
+                for(var i = 0, l = symbols.length; i < l; i++){
+                    var symbol = symbols[i];
+                    game_select.options.add( new Option(symbol, symbol) );
+                }
+            } );
 
 
     }
@@ -624,6 +625,9 @@
 
 <script>
     function symbol_to_file(symbol, start_index) {
+        if (symbol==='') {
+            return;
+        }
         filename = symbol+".csv";
         data_file = "{{url_for('static', filename='filename')}}";
         data_file = data_file.replace('filename', filename);
