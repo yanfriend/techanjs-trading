@@ -96,8 +96,11 @@ def get_strategies():
     return strategies # array of tuples
 
 
-@app.route('/get_game_candidates/<strategy_name>')  # should have a strategy parameter, use id is better!!!
-def get_game_candidates(strategy_name):
+@app.route('/get_game_candidates/<strategy_id>')  # should have a strategy parameter, use id is better!!!
+def get_game_candidates(strategy_id):
+    print strategy_id
+    return 'OK'  # ok here
+
     session = MySession.create()
 
     symbols = session.query(Strategy.symbols) \

@@ -520,11 +520,8 @@
         <br>
 
         Strategies <br>
-        <select id="get_strategies_selection_id" onchange="get_game_candidates('big index')">
+        <select id="get_strategies_selection_id" onchange="get_game_candidates(this.value)">
             <option value="0"></option>
-            <option value="1">big index</option>
-            <option value="2">s-2</option>
-            <option value="3">s-3</option>
         </select>
 
         <br>
@@ -543,8 +540,9 @@
     </div>
 
 <script>
-    function get_game_candidates() {
-        d3.request('http://localhost:9000/get_game_candidates/random')
+    function get_game_candidates(strg_id) {
+        console.log(strg_id);
+        d3.request('http://localhost:9000/get_game_candidates/'+strg_id)
                     .get(function(d) {
                         console.log("call api and populate select options");
                         <!--mydict = JSON.parse(d.responseText);-->
@@ -635,9 +633,16 @@
                 start_index = mydict.start_index;
                 end_index = mydict.end_index - start_index;  // global
 
+
+                // below is populate strategy selection
                 strategies = mydict.strategies;  // populate options with these values.
                 console.log('strategies');
                 console.log(strategies);
+                var strg_select = document.getElementById('get_strategies_selection_id');
+                for(var i = 0, l = strategies.length; i < l; i++){
+                  var strategy = strategies[i];
+                  strg_select.options.add( new Option(strategy[1]+'-'+strategy[0], strategy[0]) );  // 1 is name, 0 is id
+                }
 
                 symbol_to_file(symbol, start_index);
             } );
