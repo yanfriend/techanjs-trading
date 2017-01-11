@@ -62,8 +62,20 @@ function new_game() {
     reload_or_newgame();
 }
 
+function find_index_for_date(feed, simu_date) {
+    var low=0, high=feed.length;
+    while (low<high) {
+        var mid = Math.floor((low+high)/2);
 
-function load_data(data_file, start_index) {
+        if (feed[mid].date === simu_date) return mid;
+        else if (feed[mid].date > simu_date) high=mid-1;
+        else low=mid+1;
+    }
+    return low;
+}
+
+function load_data(data_file, start_date_str) {
+
     var result = d3.csv(data_file, function(error, csv) {
         feed = csv.map(function (d) {
             factor = +d['Adj Close'] / +d.Close;
@@ -80,8 +92,19 @@ function load_data(data_file, start_index) {
             return d3.ascending(accessor.d(a), accessor.d(b));
         });
 
-        feed = feed.slice(start_index);
-        data = feed.slice(0, BEFORE_WINDOW+WINDOW); // make it global
+
+        start_date = parseDate(start_date_str);  // '2006-12-16'); // new Date(2010,1,1);
+        date_index = find_index_for_date(feed, start_date);
+
+        if (date_index >= feed.length) {
+            console.log('date selected is out of range of sybmol');
+            return;
+        } else if (date_index === -1) {
+            date_index=0;
+        }
+
+        feed = feed.slice(date_index, date_index+BEFORE_WINDOW+WINDOW+AFTER_WINDOW+1);
+        data = feed.slice(0, BEFORE_WINDOW+WINDOW);  // feed is for all fitted data; data is for gaming
 
         init_global();
 

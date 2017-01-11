@@ -1,5 +1,6 @@
-use strategy id to get symbols
-populate options with returned values
-0, random strategy, get rid of low vol price stocks
+all kinds of strategies, and filters, with random date
+a bug: continues adding strategies.
+
+0, get rid of low vol price stocks
 1, flask apis
 2, seperate volume

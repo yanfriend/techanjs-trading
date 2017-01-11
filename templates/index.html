@@ -527,19 +527,15 @@
         <br>
         <br>
 
-        <!--<button id='get_candidates' onclick="get_game_candidates()">New Candidates</button> <br>-->
-
         Game Candidates <br>
-        <select id="get_candidate_selection_id" onchange="symbol_to_file(this.value, 1000)">
+        <select id="get_candidate_selection_id" onchange="symbol_to_file(this.value)">
             <option value=""></option>
         </select>
-
 
     </div>
 
 <script>
     function get_game_candidates(strg_id) {
-        console.log(strg_id);
         d3.request('http://localhost:9000/get_game_candidates/'+strg_id)
             .get(function(d) {
                 console.log("call api and populate select options");
@@ -550,21 +546,13 @@
                 symbols = mydict.symbols;
                 chart_start_date = mydict.chart_start_date; // string
 
-                <!--start_index = mydict.start_index;-->
-                <!--end_index = mydict.end_index - start_index; -->
-
-                <!--symbol_to_file(symbol, start_index);-->
-
-
-                <!--// below is populate game selection-->
+                <!-- below is to populate game/symbol selection-->
                 var game_select = document.getElementById('get_candidate_selection_id');
                 for(var i = 0, l = symbols.length; i < l; i++){
                     var symbol = symbols[i];
-                    game_select.options.add( new Option(symbol, symbol) );
+                    game_select.options.add( new Option(symbol, symbol+','+chart_start_date) );
                 }
             } );
-
-
     }
 
     function draw() {  // main drawing function
@@ -624,7 +612,13 @@
 
 
 <script>
-    function symbol_to_file(symbol, start_index) {
+    function symbol_to_file(symbol_start_index) {
+        // separate to symbol and date_str
+        var array_tmp = symbol_start_index.split(',');
+
+        var symbol = array_tmp[0];
+        var date_str = array_tmp[1];
+
         if (symbol==='') {
             return;
         }
@@ -632,31 +626,32 @@
         data_file = "{{url_for('static', filename='filename')}}";
         data_file = data_file.replace('filename', filename);
 
-        load_data(data_file, start_index);
+        load_data(data_file, date_str);
     }
 
-    function reload_or_newgame() {  // for load only
+    function reload_or_newgame() {
         d3.request('http://localhost:9000/reload_or_newgame')
             .get(function(d) {
                 mydict = JSON.parse(d.responseText);
 
                 fund = mydict.fund;  // suppose global
                 symbol = mydict.symbol;
-                start_index = mydict.start_index;
+
+                start_index = mydict.start_index; //remove the two?
                 end_index = mydict.end_index - start_index;  // global
 
+                date_str = mydict.start_date_str;
 
                 // below is populate strategy selection
                 strategies = mydict.strategies;  // populate options with these values.
-                console.log('strategies');
-                console.log(strategies);
+
                 var strg_select = document.getElementById('get_strategies_selection_id');
                 for(var i = 0, l = strategies.length; i < l; i++){
                   var strategy = strategies[i];
                   strg_select.options.add( new Option(strategy[1]+'-'+strategy[0], strategy[0]) );  // 1 is name, 0 is id
                 }
 
-                symbol_to_file(symbol, start_index);
+                symbol_to_file(symbol +','+ date_str);
             } );
 
     }

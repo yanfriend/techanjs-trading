@@ -82,6 +82,7 @@ class GameView(object):
         self.start_index = kwargs.get('start_index', 1000)
         self.end_index = kwargs.get('end_index', 1000000)
         self.strategies = kwargs.get('strategies', [])
+        self.start_date_str = kwargs.get('start_date_str', '2010-01-01')
 
 
 class MySession:

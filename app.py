@@ -36,7 +36,7 @@ def sell():
 
 @app.route("/new_game")
 def new_game():
-    print 'you are in new game web service: write into db.'
+    print 'you are in new game web service: write into db.not in real use yet.'
     # if no game record, generate a game.
 
     game = Game(
@@ -45,11 +45,9 @@ def new_game():
         chart_end = datetime.datetime(2016,1,1),
         game_start = datetime.datetime(1981,1,1),
     )
-
     strategy = Strategy()  # get fund
 
     # round start, current, all none.
-
     # create a GameView
 
     return 'OK'
@@ -76,6 +74,7 @@ def reload_or_newgame():
 
     game_view = GameView(fund=fund,
                          symbol=symbol,
+                         start_date_str='2010-01-01',
                          start_index=start_index,
                          end_index=end_index,
                          strategies=strategies,
@@ -98,8 +97,6 @@ def get_strategies():
 
 @app.route('/get_game_candidates/<strategy_id>')  # should have a strategy parameter, use id is better!!!
 def get_game_candidates(strategy_id):
-    print strategy_id
-
     session = MySession.create()
 
     s1 = session.query(Strategy).get(strategy_id)
