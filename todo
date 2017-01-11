@@ -1,6 +1,9 @@
-all kinds of strategies, and filters, with random date
-a bug: continues adding strategies.
+strategy first
+2, random date, or specify date in generating strategies
+3, filters(vol, new high etc)
 
-0, get rid of low vol price stocks
-1, flask apis
-2, seperate volume
+1, log to db, basically trade table in UI to db, and construct table.
+
+4, short and cover 
+5, seperate volume, ui
+
