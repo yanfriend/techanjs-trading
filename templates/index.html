@@ -500,8 +500,6 @@
     }).style("display", "inline");
 
     console.log("Render time: " + (Date.now()-timestart));
-    // todo, send a button click
-
 
     function brushed() {  // called by brush area change
         var zoomable = x.zoomable(),
@@ -632,11 +630,11 @@ Standard Deviation: 14.18
 
 
 <script>
-    function symbol_to_file(symbol_start_index) {
-        if (symbol_start_index==='') return;
+    function symbol_to_file(symbol_start_date) {
+        if (symbol_start_date==='') return;
 
         // separate to symbol and date_str
-        var array_tmp = symbol_start_index.split(',');
+        var array_tmp = symbol_start_date.split(',');
 
         var symbol = array_tmp[0];
         var date_str = array_tmp[1];
@@ -659,13 +657,13 @@ Standard Deviation: 14.18
                 fund = mydict.fund;  // suppose global
                 symbol = mydict.symbol;
 
-                start_index = mydict.start_index; //remove the two?
-                end_index = mydict.end_index - start_index;  // global
+                // start_index = mydict.start_index; //remove the two?
+                // end_index = mydict.end_index - start_index;  // global
 
                 date_str = mydict.start_date_str;
 
                 // below is populate strategy selection
-                strategies = mydict.strategies;  // populate options with these values.  todo, avoid adding.
+                strategies = mydict.strategies;  // populate options with these values.
 
                 var strg_select = document.getElementById('get_strategies_selection_id');
                 var length = strg_select.options.length;

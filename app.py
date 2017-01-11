@@ -1,3 +1,4 @@
+import csv
 import datetime
 import fnmatch
 import json
@@ -37,19 +38,6 @@ def sell():
 @app.route("/new_game")
 def new_game():
     print 'you are in new game web service: write into db.not in real use yet.'
-    # if no game record, generate a game.
-
-    game = Game(
-        symbol = 'IBM',
-        chart_start = datetime.datetime(1980,1,1),
-        chart_end = datetime.datetime(2016,1,1),
-        game_start = datetime.datetime(1981,1,1),
-    )
-    strategy = Strategy()  # get fund
-
-    # round start, current, all none.
-    # create a GameView
-
     return 'OK'
 
 
@@ -68,15 +56,13 @@ def reload_or_newgame():
     # if no last situation, return new_game()
 
     fund = 100000
-    symbol, start_index, end_index = random_strategy()
+    symbol, start_date_str = random_strategy()
 
-    strategies = get_strategies()
+    strategies = get_strategies() # only for name to populate select options
 
     game_view = GameView(fund=fund,
                          symbol=symbol,
-                         start_date_str='2010-01-01',
-                         start_index=start_index,
-                         end_index=end_index,
+                         start_date_str=start_date_str, # '2010-01-01',
                          strategies=strategies,
                          )
     print json.dumps(game_view.__dict__)
@@ -118,22 +104,22 @@ def random_strategy(fix_period=False):
 
     print(len(all_names))
 
-    while(True):
+    while (True):
         a_file = random.choice(all_names)
         print(a_file)
 
         with open(os.path.join(folder, a_file)) as f:
-            for row_count, l in enumerate(f): # row_count if rows -1
-                pass
+            my_list = [row for row in csv.DictReader(f)]
 
+        row_count = len(my_list)-1;
         window_len = BEFORE_WINDOW + WINDOW + AFTER_WINDOW
         if row_count < window_len:
             continue
 
-        start_index = random.randint(0, row_count - window_len)
-        end_index = start_index+window_len if fix_period else row_count-1
-        return a_file.replace('.csv',''), start_index, end_index
+        start_index = random.randint(0, row_count - window_len)  # after start_index, there must be enough bars to play
+        start_date_str = my_list[start_index]['Date']
 
+        return a_file.replace('.csv',''), start_date_str
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=9000, debug=True)
