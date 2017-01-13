@@ -106,7 +106,7 @@ function load_data(data_file, start_date_str) {
         feed = feed.slice(date_index, date_index+BEFORE_WINDOW+WINDOW+AFTER_WINDOW+1);
         data = feed.slice(0, BEFORE_WINDOW+WINDOW);  // feed is for all fitted data; data is for gaming
 
-        init_global();
+        init_global(feed[BEFORE_WINDOW+WINDOW]['close']);
 
         d3.select("#button_next").on("click")();
 

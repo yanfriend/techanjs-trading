@@ -177,19 +177,21 @@
 
 <script>
 
-    var arrowtrades, linetrades, fund, symbol, entry_price, portfolio, end_index;  // global
+    var arrowtrades, linetrades, fund, symbol, entry_price, portfolio, end_index, original_price;  // global
     var row_data=[];
 
     var BEFORE_WINDOW = 602,
         WINDOW = 69,
         AFTER_WINDOW = 87;
 
-    function init_global() {
+    function init_global(org_price) {
         arrowtrades=[];
         linetrades=[];
         row_data=[];
 
         portfolio='';
+
+        original_price = org_price;
     }
 
     function draw_table_head() {
@@ -199,7 +201,7 @@
           "Exit/Curr Price",
           "Holding Days",
           "Gain%",
-          "Max Drawdown%"
+          "Max Drawdown%",
       ];
       var table = d3.select("body")
               .append("table");
@@ -226,7 +228,7 @@
     var tbody = d3.selectAll("body table").selectAll("tbody");
 
     // Create a row for each object in the data
-      var reversed = row_data.slice().reverse();
+    var reversed = row_data.slice().reverse();
     var rows = tbody.selectAll("tr")
         .data(reversed)
         .enter()
@@ -239,7 +241,7 @@
                                     d['Exit Price'],
                                     d['Holding Days'],
                                     d['Gain%'],
-                                    d['Max Drawdown%']
+                                    d['Max Drawdown%'],
                                     ];})
         .text(function (d) {return d;})
             ;
@@ -249,10 +251,10 @@
         .text(function(d) { return d; })
         .style("background-color",function(d,i) {
                 if (i==5)
-                   return '#ff9999';  // red
+                   return '#ff9999';  // max drawdown, red
                 if (i==4) {
                    if (d<0) { return '#ff9999'; }
-                    else { return '#00cc00'; } // green
+                    else { return '#00cc00'; } // profit/loss color: green/red
                 }
             })
     ;
@@ -474,6 +476,9 @@
             row_data.push(in_trade);
         }
 
+        buy_hold = ((data[data.length-1]['close'] - original_price)/original_price * 100).toFixed(2);
+        document.getElementById("buy_hold").innerHTML = buy_hold.toString();
+
         x.domain(data.map(accessor.d));
         xClose.domain(x.domain());
         y.domain(techan.scale.plot.ohlc(data, accessor).domain());
@@ -530,10 +535,15 @@
 
         <br>
         <br>
+        <br>
 
+        <p style="font-size:12px">
+        Statistics: <br>
+        Buy and Hold percentage: <label id="buy_hold"></label>
+
+
+        </p>
 <pre>
-Statistics
-
 Hourly Profit: $832,369,726,368,985,500,000.00/hour
 Hourly Return: 832369726368985472.00% / hour
 Average Return Per Trade: 14577717960778975232.00%/trade
