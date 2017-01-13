@@ -553,6 +553,12 @@ Total Return: 6.020772450417246e+24%
 Standard Deviation: 14.18
 </pre>
 
+
+        <button id="slide_show_button" onclick="slide_show_charts()" > slide show charts</button>
+        <button id="slide_show_button" onclick="slide_show_charts()" > pause </button>
+        <button id="slide_show_button" onclick="slide_show_charts()" > resume </button>
+
+
     </div>
 
 <script>
@@ -640,6 +646,17 @@ Standard Deviation: 14.18
 
 
 <script>
+    // also call symbol_to_file from slide show charts.
+
+    // a file to call from a slide show button.
+    function slide_show_charts() {
+        alert('in slide show');
+        // get date, get all files, filter each file, call symbol to file to show.
+        // call python api to filter out a file?
+
+    }
+
+
     function symbol_to_file(symbol_start_date) {
         if (symbol_start_date==='') return;
 

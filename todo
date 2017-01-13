@@ -1,4 +1,6 @@
-strategy first
+slide show charts
+
+strategy
 2, random date, or specify date in generating strategies
 3, filters(vol, new high etc)
 
