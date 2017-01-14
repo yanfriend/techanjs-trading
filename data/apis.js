@@ -23,7 +23,7 @@ function buy() {
         {"buysell":"Buy",
          "Entry Price": entry_price.toFixed(2),
          "Exit Price": entry_price.toFixed(2),
-         "Holding Days":0,
+         "Holding Days": 0,
          "Gain%" : 0,
          "Max Drawdown%": 0,
          "date_index":data.length-1
@@ -62,19 +62,19 @@ function new_game() {
     reload_or_newgame();
 }
 
-function find_index_for_date(feed, simu_date) {
-    var low=0, high=feed.length;
-    while (low<high) {
+function find_index_for_date(feed, input_date) {
+    var low=0, high=feed.length-1;
+    while (low<=high) {
         var mid = Math.floor((low+high)/2);
 
-        if (feed[mid].date === simu_date) return mid;
-        else if (feed[mid].date > simu_date) high=mid-1;
+        if (feed[mid].date === input_date) return mid;
+        else if (feed[mid].date > input_date) high=mid-1;
         else low=mid+1;
     }
     return low;
 }
 
-function load_data(data_file, start_date_str) {
+function load_data(data_file, date_str, is_end_date) {
 
     var result = d3.csv(data_file, function(error, csv) {
         feed = csv.map(function (d) {
@@ -93,20 +93,26 @@ function load_data(data_file, start_date_str) {
         });
 
 
-        start_date = parseDate(start_date_str);  // '2006-12-16'); // new Date(2010,1,1);
-        date_index = find_index_for_date(feed, start_date);
+        start_date = parseDate(date_str);  // '2006-12-16'); // new Date(2010,1,1);
+        start_date_index = find_index_for_date(feed, start_date);
 
-        if (date_index >= feed.length) {
-            console.log('date selected is out of range of sybmol');
-            return;
-        } else if (date_index === -1) {
-            date_index=0;
+        if (is_end_date) {
+            start_date_index = start_date_index - (BEFORE_WINDOW+WINDOW) -1;
+            // make sure show last bar, not ensure can play. give one more extra bar for first click.
         }
 
-        feed = feed.slice(date_index, date_index+BEFORE_WINDOW+WINDOW+AFTER_WINDOW+1);
+        if (start_date_index >= feed.length) {
+            console.log('date selected is out of range of sybmol');
+            return;
+        } else if (start_date_index < 0) {
+            start_date_index=0;
+        }
+
+        feed = feed.slice(start_date_index, start_date_index+BEFORE_WINDOW+WINDOW+AFTER_WINDOW);
         data = feed.slice(0, BEFORE_WINDOW+WINDOW);  // feed is for all fitted data; data is for gaming
 
-        init_global(feed[BEFORE_WINDOW+WINDOW]['close']);
+        if (BEFORE_WINDOW+WINDOW-1 >= feed.length) init_global(feed[feed.length-1]['close']); // only for end date setting, no meaning
+        else init_global(feed[BEFORE_WINDOW+WINDOW-1]['close']);
 
         d3.select("#button_next").on("click")();
 
