@@ -1,11 +1,11 @@
-1, slide show charts
+1, filters(vol, new high etc)
+2, log to db, basically trade table in UI to db, and construct table.
+3, small buy: buy and hold.
 
-strategy
-2, filters(vol, new high etc)
-3, random date, or specify date in generating strategies
+4, short and cover 
+5, seperate volume, ui
 
-4, log to db, basically trade table in UI to db, and construct table.
 
-5, short and cover 
-6, seperate volume, ui
+6, random date, or specify date in generating strategies
+
 

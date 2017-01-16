@@ -4,6 +4,8 @@ import fnmatch
 import json
 import os
 import random
+from os import listdir
+from os.path import isfile, join
 
 from flask import Flask
 from flask import render_template
@@ -92,6 +94,14 @@ def get_game_candidates(strategy_id):
 
     sym_list = symbols.split(',')
     return json.dumps({'symbols':sym_list, 'chart_start_date':chart_start_date})
+
+
+@app.route('/list_all_symbols')
+def list_all_symbols():
+    data_path = os.path.join(os.getcwd(),'data')
+    allsymbols = [f[0:-4] for f in listdir(data_path) if isfile(os.path.join(data_path, f)) and f.endswith('.csv')]
+    allsymbols.sort()
+    return json.dumps(allsymbols);
 
 
 def random_strategy(fix_period=False):

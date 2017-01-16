@@ -162,6 +162,10 @@
         font-weight: bold;
     }
 
+    .btnClass {
+        font-size: 14px;
+    }
+
 </style>
 
 <body>
@@ -188,6 +192,7 @@
         arrowtrades=[];
         linetrades=[];
         row_data=[];
+        fund = 100000; // set to init value
 
         portfolio='';
 
@@ -543,31 +548,30 @@
 
 
         </p>
-<pre>
-Hourly Profit: $832.00/hour
-Hourly Return: 832.00% / hour
-Average Return Per Trade: 14577.00%/trade
-Win Rate: 24.33%
-Total Profit: $6.02e+27
-Total Return: 6.02e+24%
-Standard Deviation: 14.18
-</pre>
+<!--<pre>-->
+<!--Hourly Profit: $832.00/hour-->
+<!--Hourly Return: 832.00% / hour-->
+<!--Average Return Per Trade: 14577.00%/trade-->
+<!--Win Rate: 24.33%-->
+<!--Total Profit: $6.02e+27-->
+<!--Total Return: 6.02e+24%-->
+<!--Standard Deviation: 14.18-->
+<!--</pre>-->
 
 
         <br>
         <br>
         <button id="slide_show_button" onclick="slide_show_charts()" > slide show charts</button>
-        <button id="slide_show_button" onclick="slide_show_charts()" > pause </button>
-        <button id="slide_show_button" onclick="slide_show_charts()" > resume </button>
+        <button id="slide_pause_resume" onclick="pause_resume_charts()" class="btnClass"> pause </button>
         <br>
 
         <input id='symbol_date' type="date" value="" />
-        <button id="previous_symbol" onclick="slide_show_charts()" > < </button>
-
         <INPUT id='symbol_input'  style="text-transform: uppercase" TYPE = "Text" Size = 8 Value = 'IBM' >
-        <button id="symbol_go" onclick="symbol_go()"> Go </button>
+        <button id="symbol_go" onclick="symbol_go(true)"> Go </button>
 
-        <button id="next_symbol" onclick="slide_show_charts()" > > </button>
+        <br>
+        <button id="previous_symbol" onclick="previous_symbol()" > < </button>
+        <button id="next_symbol" onclick="next_symbol()" > > </button>
         <br>
         <br>
 
@@ -575,6 +579,8 @@ Standard Deviation: 14.18
     </div>
 
 <script>
+    var symbol_index = 0, all_symbols=[];
+
     document.getElementById("symbol_date").value= new Date().toISOString().slice(0, 10); // todo. set default time
 
     document.getElementById("symbol_input")// addd handler, symbol text <enter> mean click <go>
@@ -592,9 +598,34 @@ Standard Deviation: 14.18
                 }
             });
 
-    function symbol_go() { // todo, align with chrome ?
+
+    function pause_resume_charts() {
+        var pause_or_resume = document.getElementById('slide_pause_resume').innerText;
+        if (pause_or_resume == 'pause') { // pause operation
+            document.getElementById('slide_pause_resume').innerText = "resume";
+        } else { // resume operation
+            document.getElementById('slide_pause_resume').innerText = "pause";
+        }
+    }
+
+    function symbol_go(symbol_search) { // todo, align with chrome ?
         var symbol = document.getElementById('symbol_input').value;
+
+        if (symbol_search==true && all_symbols.length>0) {
+            var low=0, high=all_symbols.length-1;
+            while (low<=high) {
+                var mid = Math.floor((low+high)/2);
+
+                if (all_symbols[mid] === symbol) { symbol_index = mid; break; }
+                else if (all_symbols[mid] > symbol) { high = mid-1; symbol_index=low; }
+                else { low = mid+1; symbol_index=low; }
+            }
+            symbol = all_symbols[symbol_index];
+            document.getElementById('symbol_input').value = symbol;
+        }
+
         var date=document.getElementById('symbol_date').value; //.split('-');
+
 {#        var month=date[1];#}
 {#        var day=date[2];#}
 {#        var year=date[0];#}
@@ -602,6 +633,39 @@ Standard Deviation: 14.18
         symbol_to_file(symbol+','+date, true);  // mark it's end date.
 
     }
+
+
+    function slide_show(){  // symbol_go directly ?
+        var pause_or_resume = document.getElementById('slide_pause_resume').innerText;
+        if (pause_or_resume==='resume') { // in paused state
+            return;
+        }
+        if ((symbol_index >= all_symbols.length) || (symbol_index<0)) { return; }
+
+        document.getElementById('symbol_input').value = all_symbols[symbol_index];
+        symbol_index++;
+        symbol_go();  // dont earch symbols for performance.
+    }
+
+    function slide_show_charts() {
+        d3.request('http://localhost:9000/list_all_symbols')
+            .get(function(d) {
+                all_symbols = JSON.parse(d.responseText);
+                setInterval(slide_show, 1000);
+        } );
+    }
+
+    function previous_symbol() {
+        symbol_index--;
+        document.getElementById('symbol_input').value=all_symbols[symbol_index-1];
+        symbol_go();
+    }
+    function next_symbol() {
+        document.getElementById('symbol_input').value=all_symbols[symbol_index];
+        symbol_index++;
+        symbol_go();
+    }
+
 
     // for strategy and games candidates below
     function get_game_candidates(strg_id) {
@@ -647,8 +711,6 @@ Standard Deviation: 14.18
         focus.select("g.y.annotation.right").datum([data[data.length-1]]).call(ohlcRightAnnotation);  // show close price
 
         // todo, remove() first to init?? when arrowtrades is []
-        console.log('arrowtrades');
-        console.log(arrowtrades);
 
         if (arrowtrades.length == 0) {
             focus.selectAll("g.tradearrow").select("g.data").selectAll("path.tradearrow").remove();
@@ -688,21 +750,6 @@ Standard Deviation: 14.18
 
 
 <script>
-    // also call symbol_to_file from slide show charts.
-
-    // a file to call from a slide show button.
-    function slide_show_charts() {
-        alert('in slide show');
-        // try get current chart first, if none, get all files and loop;
-        // if have one, start from that one, and next.
-
-        // set a global value to pause or play.
-
-        // get date, get all files, filter each file, call symbol to file to show.
-        // call python api to filter out a file?
-
-    }
-
 
     function symbol_to_file(symbol_start_date, is_end_date) {
         if (symbol_start_date==='') return;
