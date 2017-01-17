@@ -105,6 +105,7 @@ function load_data(data_file, date_str, is_end_date) {
             console.log('date selected is out of range of sybmol');
             return;
         } else if (start_date_index < 0) {
+            if (is_end_date) return; // make sure end date is the last bar in slide show.
             start_date_index=0;
         }
 

@@ -561,7 +561,7 @@
 
         <br>
         <br>
-        <button id="slide_show_button" onclick="slide_show_charts()" > slide show charts</button>
+        <button id="slide_show_button" onclick="this.disabled=true;slide_show_charts()" > slide show charts</button>
         <button id="slide_pause_resume" onclick="pause_resume_charts()" class="btnClass"> pause </button>
         <br>
 
@@ -609,9 +609,9 @@
     }
 
     function symbol_go(symbol_search) { // todo, align with chrome ?
-        var symbol = document.getElementById('symbol_input').value;
+        var symbol = document.getElementById('symbol_input').value.toUpperCase();
 
-        if (symbol_search==true && all_symbols.length>0) {
+        if (symbol_search===true && all_symbols.length>0) {
             var low=0, high=all_symbols.length-1;
             while (low<=high) {
                 var mid = Math.floor((low+high)/2);
@@ -620,7 +620,7 @@
                 else if (all_symbols[mid] > symbol) { high = mid-1; symbol_index=low; }
                 else { low = mid+1; symbol_index=low; }
             }
-            symbol = all_symbols[symbol_index];
+            symbol = all_symbols[symbol_index];  // set symbol index for slide show jump.
             document.getElementById('symbol_input').value = symbol;
         }
 
@@ -642,16 +642,16 @@
         }
         if ((symbol_index >= all_symbols.length) || (symbol_index<0)) { return; }
 
-        document.getElementById('symbol_input').value = all_symbols[symbol_index];
+        document.getElementById('symbol_input').value = all_symbols[symbol_index]; // set symbol by index
         symbol_index++;
         symbol_go();  // dont earch symbols for performance.
     }
 
-    function slide_show_charts() {
+    function slide_show_charts() {  // called only once.
         d3.request('http://localhost:9000/list_all_symbols')
             .get(function(d) {
                 all_symbols = JSON.parse(d.responseText);
-                setInterval(slide_show, 1000);
+                setInterval(slide_show, 750);
         } );
     }
 
