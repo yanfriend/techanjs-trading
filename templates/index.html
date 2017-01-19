@@ -196,7 +196,7 @@
 
         portfolio='';
 
-        original_price = org_price;
+        original_price = 0;
     }
 
     function draw_table_head() {
@@ -481,7 +481,8 @@
             row_data.push(in_trade);
         }
 
-        buy_hold = ((data[data.length-1]['close'] - original_price)/original_price * 100).toFixed(2);
+        if (original_price == 0) { original_price = data[data.length-1]['close']; buy_hold=''; }
+        else { buy_hold = ((data[data.length-1]['close'] - original_price)/original_price * 100).toFixed(2); }
         document.getElementById("buy_hold").innerHTML = buy_hold.toString();
 
         x.domain(data.map(accessor.d));

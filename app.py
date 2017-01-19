@@ -12,10 +12,8 @@ from flask import render_template
 
 from apis.db import Game, Strategy, GameView, MySession
 
-BEFORE_WINDOW = 602
-WINDOW = 69
-AFTER_WINDOW = 87
-
+from strategy.defs import BEFORE_WINDOW, WINDOW, AFTER_WINDOW
+from strategy.filter import Filter
 
 app = Flask(__name__, static_folder='data')
 
@@ -96,7 +94,7 @@ def get_game_candidates(strategy_id):
     return json.dumps({'symbols':sym_list, 'chart_start_date':chart_start_date})
 
 
-@app.route('/list_all_symbols')
+@app.route('/list_all_symbols') # add date, strategy, i.e. filter ?
 def list_all_symbols():
     data_path = os.path.join(os.getcwd(),'data')
     allsymbols = [f[0:-4] for f in listdir(data_path) if isfile(os.path.join(data_path, f)) and f.endswith('.csv')]
@@ -104,7 +102,7 @@ def list_all_symbols():
     return json.dumps(allsymbols);
 
 
-def random_strategy(fix_period=False):
+def random_strategy(fix_period=False): # not a random as added new high judge.
     # got all filenames, random select one.
     folder = './data'
     all_names = []
@@ -121,15 +119,19 @@ def random_strategy(fix_period=False):
         with open(os.path.join(folder, a_file)) as f:
             my_list = [row for row in csv.DictReader(f)]
 
-        row_count = len(my_list)-1;
+        row_count = len(my_list) - 1;
         window_len = BEFORE_WINDOW + WINDOW + AFTER_WINDOW
         if row_count < window_len:
             continue
 
         start_index = random.randint(0, row_count - window_len)  # after start_index, there must be enough bars to play
         start_date_str = my_list[start_index]['Date']
+        end_date_str = my_list[start_index + (BEFORE_WINDOW + WINDOW) - 1]['Date']  # cut to show window
 
-        return a_file.replace('.csv',''), start_date_str
+        if not Filter(a_file[:-4], end_date_str).filter():
+            continue
+
+        return a_file.replace('.csv', ''), start_date_str
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=9000, debug=True)

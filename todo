@@ -1,10 +1,9 @@
-1, filters(vol, new high etc)
+1, more filters -> db ? 
 2, log to db, basically trade table in UI to db, and construct table.
-3, small buy: buy and hold.
+3, random date, or specify date in generating strategies
 
 4, short and cover 
 5, seperate volume, ui
 
-6, random date, or specify date in generating strategies
 
 
