@@ -29,8 +29,9 @@ class Strategy(Base):
     note = Column(Text)  # secret comment
     symbols = Column(Text)  # use csv format
 
-    chart_start_date = Column(DateTime)
-    chart_end_date = Column(DateTime)
+    window_end_date = Column(DateTime)
+
+    chart_end_date = Column(DateTime) # the two reserved
     game_start_date = Column(DateTime)
 
 
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     random_strategy.name = 'big index'
     random_strategy.note = 'test'
     random_strategy.symbols = 'IBM,SPY,DIA'
-    random_strategy.chart_start_date = datetime.datetime(1985,1,1) # this will change to random
+    random_strategy.window_end_date = datetime.datetime(1985,1,1) # this will change to random
 
     session.add(random_strategy)
     session.commit()

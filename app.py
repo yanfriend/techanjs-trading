@@ -10,6 +10,7 @@ from os.path import isfile, join
 from flask import Flask
 from flask import render_template
 
+from strategy import util
 from apis.db import Game, Strategy, GameView, MySession
 
 from strategy.defs import BEFORE_WINDOW, WINDOW, AFTER_WINDOW
@@ -87,18 +88,16 @@ def get_game_candidates(strategy_id):
 
     s1 = session.query(Strategy).get(strategy_id)
     symbols = s1.symbols
-    chart_start_date = s1.chart_start_date.strftime("%Y-%m-%d")
+    window_end_date = s1.window_end_date.strftime("%Y-%m-%d")
     print symbols
 
     sym_list = symbols.split(',')
-    return json.dumps({'symbols':sym_list, 'chart_start_date':chart_start_date})
+    return json.dumps({'symbols':sym_list, 'window_end_date':window_end_date})
 
 
 @app.route('/list_all_symbols') # add date, strategy, i.e. filter ?
 def list_all_symbols():
-    data_path = os.path.join(os.getcwd(),'data')
-    allsymbols = [f[0:-4] for f in listdir(data_path) if isfile(os.path.join(data_path, f)) and f.endswith('.csv')]
-    allsymbols.sort()
+    allsymbols = util.list_all_symbols()
     return json.dumps(allsymbols);
 
 

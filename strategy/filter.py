@@ -9,24 +9,24 @@ import numpy as np
 
 from defs import BEFORE_WINDOW, WINDOW, AFTER_WINDOW, NEW_HIGH_WINDOW, MIN_PRICE, VOLUME_PERIOD, MIN_VOLUME
 
-
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
+from strategy import util
 from apis.db import MySession, Strategy
 
 
 class Filter(object):
-    def __init__(self, symbol, datestr):
+    def __init__(self, symbol, window_enddate_str):
         # self.date = datetime.datetime.strptime(datestr, '%Y-%m-%d')
-        # self.symbol = symbol
+        self.symbol = symbol
 
         self.df = pd.read_csv(os.path.join('./data', symbol + '.csv'), index_col='Date', parse_dates=True)
-        self.df = self.df.ix[:datestr]  # cut off
+        self.df = self.df.ix[:window_enddate_str]  # cut off
 
     def filter(self):
         if len(self.df) <= WINDOW:
             return False
-
+        print self.symbol, # print to monitor progress
         return self.filter_price() \
                and self.filter_volume() \
                and self.high_in_window()
@@ -65,32 +65,32 @@ class Filter(object):
 
 if __name__ == "__main__":
     print 'run in whole project root foler'
-    print Filter('SH', '2010-01-01').filter() # False
+    print Filter('SH', '2010-01-01').filter() # For test, False
     print Filter('IBM','2010-01-01').filter() # pass True
-    exit()
-
-
 
     argv = sys.argv[1:]
     date_str = None
 
     try:
-        opts, args = getopt.getopt(argv, 'hs:n:', ['date='])
+        opts, args = getopt.getopt(argv, 'hd:', ['date='])
     except getopt.GetoptError:
         print 'python {} -d <date>'.format(sys.argv[0])
-        sys.exit(2)
+        sys.exit(1)
+
+    import ipdb; ipdb.set_trace()
 
     for opt, arg in opts:
         if opt == '-h':
             print 'python {} -d <date>'.format(sys.argv[0])
-            sys.exit()
+            sys.exit(2)
         elif opt in ('-d', '--date'):
-            date_str = int(arg)
+            date_str = arg
 
     if date_str is None:
-        chart_start_date = datetime.datetime(1985,1,1)  # todo, this will change to random
+        print 'python {} -d "%Y-%m-%d"'
+        sys.exit(3)
     else:
-        chart_start_date = datetime.strptime(date_str, "%Y-%m-%d")
+        window_enddate = datetime.datetime.strptime(date_str, "%Y-%m-%d")
 
     session = MySession.create()
 
@@ -98,14 +98,14 @@ if __name__ == "__main__":
     random_strategy.name = 'days high'
     random_strategy.note = '69 days high'
 
-    random_strategy.chart_start_date = datetime.datetime(1985,1,1)  # this will change to random
+    random_strategy.window_end_date = window_enddate # todo, calculate to change it to start date.
+    # this is window end date, but stored as chart start
 
-    symbols = ''
-    # todo, for each file, get to the date, in previous 15 days, whether one of them has 69 days high. add it if yes.
+    symbols = util.list_all_symbols()
+    qualifed_symbols = [symbol for symbol in symbols if Filter(symbol, date_str).filter()]
 
-
-
-    random_strategy.symbols = symbols
+    import ipdb; ipdb.set_trace()
+    random_strategy.symbols = ','.join(qualifed_symbols)
 
     session.add(random_strategy)
     session.commit()

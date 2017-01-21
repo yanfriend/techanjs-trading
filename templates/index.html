@@ -536,7 +536,7 @@
         <br>
 
         Game Candidates <br>
-        <select id="get_candidate_selection_id" onchange="symbol_to_file(this.value)">
+        <select id="get_candidate_selection_id" onchange="symbol_to_file(this.value,true)">
         </select>
 
         <br>
@@ -680,7 +680,7 @@
                 console.log(mydict)
 
                 symbols = mydict.symbols;
-                chart_start_date = mydict.chart_start_date; // string
+                window_end_date = mydict.window_end_date; // string
 
                 <!-- below is to populate game/symbol selection-->
                 var game_select = document.getElementById('get_candidate_selection_id');
@@ -691,7 +691,7 @@
                 game_select.options.add( new Option('', '', true) );
                 for(var i = 0, l = symbols.length; i < l; i++){
                     var symbol = symbols[i];
-                    game_select.options.add( new Option(symbol, symbol+','+chart_start_date) );
+                    game_select.options.add( new Option(symbol, symbol+','+window_end_date) );
                 }
             } );
     }
