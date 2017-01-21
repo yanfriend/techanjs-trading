@@ -1,9 +1,8 @@
-1, more filters -> db ? 
-2, log to db, basically trade table in UI to db, and construct table.
-3, random date, or specify date in generating strategies
+1, log to db, basically trade table in UI to db, and construct table.
+2, random date, or specify date in generating strategies
 
-4, short and cover 
-5, seperate volume, ui
+3, short and cover 
+4, seperate volume, ui
 
-
+5, more strategies ? 
 
