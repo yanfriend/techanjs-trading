@@ -26,7 +26,12 @@ function buy() {
          "Holding Days": 0,
          "Gain%" : 0,
          "Max Drawdown%": 0,
-         "date_index":data.length-1
+         "date_index":data.length-1,
+
+         "Max profit%": 0,
+
+         "entry date": last_data['date'],
+         "symbol":symbol,  // for log, not show
         }
     );
 
@@ -47,11 +52,14 @@ function sell() {
     fund +=  position * last_close;
     portfolio = '';
 
-    d3.request('http://localhost:9000/sell')
+    d3.select("#button_next").on("click")();
+
+    console.log(JSON.stringify(row_data)); // todo, remove it.
+
+    d3.request('http://localhost:9000/sell/'+JSON.stringify(row_data) )
         .get(function() {} );
 
 
-    d3.select("#button_next").on("click")();
 }
 
 function new_game() {

@@ -11,7 +11,7 @@ from flask import Flask
 from flask import render_template
 
 from strategy import util
-from apis.db import Game, Strategy, GameView, MySession
+from apis.db import Game, Strategy, GameView, MySession, Round
 
 from strategy.defs import BEFORE_WINDOW, WINDOW, AFTER_WINDOW
 from strategy.filter import Filter
@@ -30,11 +30,42 @@ def buy():
     return 'OK'
 
 
-@app.route("/sell")
-def sell():
-    print 'you are in sell web service: write into db.'
-    return 'OK'
+@app.route("/sell/<row_data>")
+def sell(row_data):
+    print 'in sell: '+row_data # now get the data ok, log to db.
 
+    row_data = json.loads(row_data)
+    rounds = []
+
+    for a_row in row_data:
+        round = Round(
+            symbol=a_row.get('symbol',''),
+
+            entry_date = datetime.datetime.strptime(a_row['entry date'][0:10],'%Y-%m-%d'),
+            exit_date=datetime.datetime.strptime(a_row['exit date'][0:10], '%Y-%m-%d'),
+            holding_days = a_row['Holding Days'],
+
+            # current_date = Column(DateTime)  # reserved
+
+            entry_price = a_row['Entry Price'],
+            exit_price = a_row['Exit Price'],
+
+            buy_sell = a_row['buysell'][0:1],
+            # position = Column(Integer)  # reserved ?
+
+            # start_fund = Column(Float)
+            # end_fund = Column(Float)
+
+            max_drawdown = a_row['Max Drawdown%'],
+            max_profit = a_row['Max profit%'],
+            profit_percentage = a_row['Gain%'],
+
+            # game_id = Column(Integer, ForeignKey('game.id'))
+        )
+        rounds.append(round)
+
+    create_round(rounds)
+    return 'OK'
 
 @app.route("/new_game")
 def new_game():
@@ -57,12 +88,13 @@ def reload_or_newgame():
     # if no last situation, return new_game()
 
     fund = 100000
-    symbol, start_date_str = random_strategy()
+    symbol, start_date_str, game_id = random_strategy()
 
     strategies = get_strategies() # only for name to populate select options
 
     game_view = GameView(fund=fund,
                          symbol=symbol,
+                         game_id=game_id,
                          start_date_str=start_date_str, # '2010-01-01',
                          strategies=strategies,
                          )
@@ -101,6 +133,20 @@ def list_all_symbols():
     return json.dumps(allsymbols);
 
 
+def create_game(symbol, window_end_date):
+    session = MySession.create()
+    game = Game(symbol=symbol, window_end_date=window_end_date)
+    session.add(game)
+    session.commit()
+    return game.id
+
+def create_round(rounds):
+    if len(rounds)==0:
+        return
+    session = MySession.create()
+    session.add_all(rounds)
+    session.commit()
+
 def random_strategy(fix_period=False): # not a random as added new high judge.
     # got all filenames, random select one.
     folder = './data'
@@ -118,19 +164,21 @@ def random_strategy(fix_period=False): # not a random as added new high judge.
         with open(os.path.join(folder, a_file)) as f:
             my_list = [row for row in csv.DictReader(f)]
 
-        row_count = len(my_list) - 1;
+        row_count = len(my_list) # - 1;
         window_len = BEFORE_WINDOW + WINDOW + AFTER_WINDOW
         if row_count < window_len:
             continue
 
-        start_index = random.randint(0, row_count - window_len)  # after start_index, there must be enough bars to play
+        start_index = random.randint(0, row_count - window_len+1)  # after start_index, there must be enough bars to play
         start_date_str = my_list[start_index]['Date']
-        end_date_str = my_list[start_index + (BEFORE_WINDOW + WINDOW) - 1]['Date']  # cut to show window
+        end_date_str = my_list[start_index + (BEFORE_WINDOW + WINDOW)]['Date']  # cut to show window
 
         if not Filter(a_file[:-4], end_date_str).filter():
             continue
 
-        return a_file.replace('.csv', ''), start_date_str
+        symbol = a_file.replace('.csv','')
+        game_id = create_game(symbol=symbol, window_end_date=datetime.datetime.strptime(end_date_str, "%Y-%m-%d"))
+        return symbol, start_date_str, game_id
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=9000, debug=True)

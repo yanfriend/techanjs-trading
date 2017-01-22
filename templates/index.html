@@ -181,7 +181,7 @@
 
 <script>
 
-    var arrowtrades, linetrades, fund, symbol, entry_price, portfolio, end_index, original_price;  // global
+    var arrowtrades, linetrades, fund, symbol, entry_price, portfolio, end_index, original_price, game_id;  // global
     var row_data=[];
 
     var BEFORE_WINDOW = 602,
@@ -207,6 +207,7 @@
           "Holding Days",
           "Gain%",
           "Max Drawdown%",
+          "Max Profit%"
       ];
       var table = d3.select("body")
               .append("table");
@@ -247,6 +248,7 @@
                                     d['Holding Days'],
                                     d['Gain%'],
                                     d['Max Drawdown%'],
+                                    d['Max profit%'],
                                     ];})
         .text(function (d) {return d;})
             ;
@@ -255,6 +257,8 @@
         .append("td")
         .text(function(d) { return d; })
         .style("background-color",function(d,i) {
+                if (i==6)
+                    return '#00AA00'; // max profit, green
                 if (i==5)
                    return '#ff9999';  // max drawdown, red
                 if (i==4) {
@@ -478,6 +482,9 @@
             in_trade['Max Drawdown%'] = Math.min(in_trade['Max Drawdown%'],
                     ((last_data['close']-in_trade['Entry Price'])/in_trade['Entry Price'] * 100).toFixed(2)
                                                  );
+            in_trade['Max profit%'] = Math.max(in_trade['Max profit%'], in_trade['Gain%']);
+            in_trade['exit date'] = last_data['date'];
+
             row_data.push(in_trade);
         }
 
@@ -780,6 +787,7 @@
 
                 fund = mydict.fund;  // suppose global
                 symbol = mydict.symbol;
+                game_id = mydict.game_id;
 
                 // start_index = mydict.start_index; //remove the two?
                 // end_index = mydict.end_index - start_index;  // global

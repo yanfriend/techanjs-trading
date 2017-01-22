@@ -42,7 +42,9 @@ class Game(Base):
 
     symbol = Column(String(10))
 
-    chart_start = Column(DateTime)
+    window_end_date = Column(DateTime)
+
+    chart_start = Column(DateTime)  # below three are reserved.
     chart_end = Column(DateTime)
     game_start = Column(DateTime)  # time in chart.
 
@@ -53,20 +55,30 @@ class Round(Base):
     __tablename__ = 'round'
     id = Column(Integer, primary_key=True)
     created = Column(DateTime, default=func.now())
-    symbol = Column(String(10))  # this is duplicates
+    symbol = Column(String(10))  # this is duplicates, on purpose
 
-    round_start = Column(DateTime)
-    round_current = Column(DateTime)
+    entry_date = Column(DateTime)
+    exit_date = Column(DateTime)
+    holding_days = Column(Integer)  # hold trading days
 
-    buy_sell = Column(String(1))
+    current_date = Column(DateTime) # reserved
+
     entry_price = Column(Float)
     exit_price = Column(Float)
-    position = Column(Integer)
+
+    buy_sell = Column(String(1))
 
     max_drawdown = Column(Float)
+    max_profit = Column(Float)
     profit_percentage = Column(Float)
 
     game_id = Column(Integer, ForeignKey('game.id'))
+    position = Column(Integer) # reserved
+
+    start_fund = Column(Float)
+    end_fund = Column(Float)
+
+
     # Use cascade='delete,all' to propagate the deletion of a Game onto its Rounds
     game = relationship(
         Game,
@@ -75,11 +87,15 @@ class Round(Base):
                         cascade='delete,all'))
     # Game accesses rounds use list
 
+    # def __init__(self, **kwargs):
+    #     self.__dict__.update(kwargs)
+
 
 class GameView(object):
     def __init__(self, **kwargs):
         self.fund = kwargs.get('fund', 100000)
         self.symbol = kwargs.get('symbol', 'IBM')
+        self.game_id = kwargs.get('game_id')
         self.start_index = kwargs.get('start_index', 1000)
         self.end_index = kwargs.get('end_index', 1000000)
         self.strategies = kwargs.get('strategies', [])
@@ -105,14 +121,14 @@ class MySession:
 if __name__ == "__main__":
     session = MySession.create()
 
-    random_strategy = Strategy()
-    random_strategy.name = 'big index'
-    random_strategy.note = 'test'
-    random_strategy.symbols = 'IBM,SPY,DIA'
-    random_strategy.window_end_date = datetime.datetime(1985,1,1) # this will change to random
-
-    session.add(random_strategy)
-    session.commit()
+    # random_strategy = Strategy()
+    # random_strategy.name = 'big index'
+    # random_strategy.note = 'test'
+    # random_strategy.symbols = 'IBM,SPY,DIA'
+    # random_strategy.window_end_date = datetime.datetime(1985,1,1) # this will change to random
+    #
+    # session.add(random_strategy)
+    # session.commit()
 
 
     ibm = Game(symbol='IBM')
