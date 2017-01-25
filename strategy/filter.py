@@ -23,13 +23,22 @@ class Filter(object):
         self.df = pd.read_csv(os.path.join('./data', symbol + '.csv'), index_col='Date', parse_dates=True)
         self.df = self.df.ix[:window_enddate_str]  # cut off
 
-    def filter(self):
+    def filter(self, batch=False):
         if len(self.df) <= WINDOW:
             return False
         print self.symbol, # print to monitor progress
-        return self.filter_price() \
+        ret = self.filter_price() \
                and self.filter_volume() \
                and self.high_in_window()
+        if not ret:
+            return False
+
+        if batch:
+            ret = self.has_cycle()  # not use it in online chat show, its too slow.
+            if ret:
+                reversed_index = [a[0] for a in ret]
+                return self.dry_up_volume(reversed_index)
+        return ret
 
     def filter_price(self):
         """
@@ -60,8 +69,52 @@ class Filter(object):
 
         return max_recent_close >= max_window_close
 
+    def has_cycle(self):
+        """
+        it has 5-6 cycle in half a year, each up 20%
+        Focus on stocks that regularly exhibit 6 to 8 day cycles of 20% price movement
+        :return:
+        """
+        index = 1
+        cycle = 0
+        ret = []
 
+        while index < 128:  # half an year.
+            if index >= len(self.df):
+                print 'too short in {}'.format(self.symbol)
+                return False
+            highest = self.df.ix[-index]['High'].max()
+            lowest = self.df.ix[-index-8:-index]['Low'].min()  # not include the last one.
+            if highest/lowest > 1.2:  # 20%+ up
+                cycle += 1
+                low_date_index = self.df.ix[-index-8:-index]['Low'].idxmin()
+                low_index = self.df.index.get_loc(low_date_index)  # number index, location actually
 
+                index = len(self.df) - low_index  # move to the lowest bar.
+                ret.append((index, low_date_index))
+            else:
+                index += 1 # move to next one
+        if cycle >=5:
+            # import ipdb; ipdb.set_trace()
+            return ret
+        else:
+            return False
+
+    def dry_up_volume(self, reversed_index):
+        """
+        for each index, calculate five day low volume, include the index day.
+        get average volume.
+        if last volume < 1.5 * avg volume, then return True as in dry volume state; otherwise False.
+        :param reversed_index:
+        :return:
+        """
+        vol = 0
+        count = 0
+        for ind in reversed_index:
+            vol += self.df.ix[-ind-4: -ind+1]['Volume'].min()  # [:-1] always not include the last one, but cant use 0
+            count += 1
+        avg_vol = vol*1.0/count
+        return self.df.ix[-1]['Volume'] < 1.5 * avg_vol
 
 if __name__ == "__main__":
     print 'run in whole project root foler'
@@ -76,8 +129,6 @@ if __name__ == "__main__":
     except getopt.GetoptError:
         print 'python {} -d <date>'.format(sys.argv[0])
         sys.exit(1)
-
-    import ipdb; ipdb.set_trace()
 
     for opt, arg in opts:
         if opt == '-h':
@@ -95,16 +146,15 @@ if __name__ == "__main__":
     session = MySession.create()
 
     random_strategy = Strategy()
-    random_strategy.name = 'days high'
+    random_strategy.name = 'days high, with cycle'
     random_strategy.note = '69 days high'
 
     random_strategy.window_end_date = window_enddate # todo, calculate to change it to start date.
     # this is window end date, but stored as chart start
 
     symbols = util.list_all_symbols()
-    qualifed_symbols = [symbol for symbol in symbols if Filter(symbol, date_str).filter()]
+    qualifed_symbols = [symbol for symbol in symbols if Filter(symbol, date_str).filter(batch=True)]
 
-    import ipdb; ipdb.set_trace()
     random_strategy.symbols = ','.join(qualifed_symbols)
 
     session.add(random_strategy)
