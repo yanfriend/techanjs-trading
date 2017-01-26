@@ -1,8 +1,7 @@
-1, log to db, basically trade table in UI to db, and construct table.
-2, random date, or specify date in generating strategies
+1, seperate volume, ui
+2, short and cover 
+3, more strategies ? 
 
-3, short and cover 
-4, seperate volume, ui
-
-5, more strategies ? 
-
+other consideration: but the most important, execution!
+cycle recalculation ? 
+fundamental data ? 

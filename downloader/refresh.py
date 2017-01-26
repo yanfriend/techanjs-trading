@@ -49,7 +49,7 @@ for one_file in symbol_files:
 
             try:
                 sp500 = web.DataReader(symbol, source, start=start_date, end=end_date, retry_count=try_time)
-                sp500.to_csv('../data/'+symbol+'.csv')
+                sp500.to_csv('./data/'+symbol+'.csv')
             except:
                 print '{} times in downloading:{}'.format(try_time, symbol)
             # print symbol

@@ -9,7 +9,8 @@ source = 'yahoo'
 
 try_time = 5
 
-folder = '../data'
+folder = './data'
+# run in project root folder
 
 # for file in ['IBM.csv']:
 for file in os.listdir(folder):
