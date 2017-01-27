@@ -768,12 +768,17 @@
         // separate to symbol and date_str
         var array_tmp = symbol_start_date.split(',');
 
-        var symbol = array_tmp[0];
+        symbol = array_tmp[0]; // symbol is global
         var date_str = array_tmp[1];
 
         if (symbol==='') {
             return;
         }
+
+        // process current position if have.
+        if (portfolio==='buy')
+            d3.select("#button_sell").on("click")();
+
         filename = symbol+".csv";
         data_file = "{{url_for('static', filename='filename')}}";
         data_file = data_file.replace('filename', filename);
