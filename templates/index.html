@@ -50,12 +50,25 @@
         opacity: 0.5;
     }
 
+{#    path.volumeSep {#}
+{#        fill: #cccc00;#}
+{#        opacity: 0.5;#}
+{#    }#}
+
+{#    path.volumeSep.up {#}
+{#        fill: #00AA00;#}
+{#    }#}
+{#    path.volumeSep.down {#}
+{#        fill: #FF0000;#}
+{#    }#}
+{##}
+
     path.volume.up {
-        fill: #cccc00;
+        fill: #00AA00;
     }
 
     path.volume.down {
-        fill: #cccc00;
+        fill: #FF0000;
     }
 
 {#  stroke may change color, green or red, todo: remove it #}
@@ -295,8 +308,15 @@
     var xClose = techan.scale.financetime()
             .range([0, width_main]);
 
+    var xVolume = techan.scale.financetime()
+            .range([0, width_main]);
+
     var y = d3.scaleLinear()
             .range([height_main, 0]);
+
+    var yVolumeSep = d3.scaleLinear()
+            .range([100, 0]);  // adjust volume pane height
+            // .range([volume_close, 0])
 
     var yVolume = d3.scaleLinear()
             .range([y(0), y(0.3)]);
@@ -317,14 +337,23 @@
             .xScale(x)
             .yScale(yVolume);
 
+    var volumeSep = techan.plot.volume()
+            .accessor(candlestick.accessor())   // Set the accessor to a candlestick accessor so we get highlighted bars
+            .xScale(x)
+            .yScale(yVolumeSep);
+
+
     var volumeAxis = d3.axisRight(yVolume)
+            .ticks(3)
+            .tickFormat(d3.format(",.3s"));
+
+    var volumeAxisSep = d3.axisRight(yVolumeSep)
             .ticks(3)
             .tickFormat(d3.format(",.3s"));
 
     var close = techan.plot.close()
             .xScale(xClose)
             .yScale(yClose);
-
 
     var tradearrow = techan.plot.tradearrow()
             .xScale(x)
@@ -344,8 +373,8 @@
 
 
     var xAxis = d3.axisBottom(x);
-
     var xAxis2 = d3.axisBottom(xClose);
+    var xAxisVolume = d3.axisBottom(xVolume);
 
     var yAxis = d3.axisRight(y);
 
@@ -399,6 +428,11 @@
 
     focus.append("g")
             .attr("class", "volume")
+            .attr("clip-path", "url(#clip)");
+
+    focus.append("g")
+            .attr("class", "volumeSep")
+            .attr("transform", "translate(0," + (height_main+margin_main.top) + ")")  // adjust vol pane position
             .attr("clip-path", "url(#clip)");
 
     focus.append("g")
@@ -493,13 +527,18 @@
         document.getElementById("buy_hold").innerHTML = buy_hold.toString();
 
         x.domain(data.map(accessor.d));
+        xVolume.domain(data.map(accessor.d));
+
         xClose.domain(x.domain());
         y.domain(techan.scale.plot.ohlc(data, accessor).domain());
         yClose.domain(y.domain());
         yVolume.domain(techan.scale.plot.volume(data).domain());
 
+        yVolumeSep.domain(techan.scale.plot.volume(data).domain());
+
         focus.select("g.candlestick").datum(data);
         focus.select("g.volume").datum(data);
+        focus.select("g.volumeSep").datum(data);
 
         context.select("g.close").datum(data).call(close);
         context.select("g.x.axis").call(xAxis2);
@@ -512,7 +551,7 @@
           .selectAll("rect").attr("height", height_close);
 
         // Associate the brush with the scale and render the brush only AFTER a domain has been applied
-        context.select("g.pane").call(brush).selectAll("rect").attr("height", height_close); // seems no use
+        // context.select("g.pane").call(brush).selectAll("rect").attr("height", height_close); // seems no use
 
         draw();
     }).style("display", "inline");
@@ -708,14 +747,24 @@
         var candlestickSelection = focus.select("g.candlestick"),
             data = candlestickSelection.datum();
         y.domain(techan.scale.plot.ohlc(data.slice.apply(data, x.zoomable().domain()), candlestick.accessor()).domain());
+        yVolumeSep.domain(techan.scale.plot.volume(data.slice.apply(data, x.zoomable().domain()), volume.accessor().v).domain());
+
         candlestickSelection.call(candlestick);
-        focus.select("g.volume").call(volume);
+        // focus.select("g.volume").call(volume);  // hide in candle volume
+
         // using refresh method is more efficient as it does not perform any data joins
         // Use this if underlying data is not changing
 //        svg.select("g.candlestick").call(candlestick.refresh);
         focus.select("g.x.axis").call(xAxis);
         focus.select("g.y.axis").call(yAxis);
+
         focus.select("g.volume.axis").call(volumeAxis);
+
+        //focus.select("g.x.axis").call(xAxisVolume);
+        //focus.select("g.y.axis").call(yAxis);
+        focus.select("g.volumeSep").call(volumeSep);
+        focus.select("g.volumeSep.axis").call(volumeAxisSep);
+
 
         focus.select("g.y.annotation.right").datum([data[data.length-1]]).call(ohlcRightAnnotation);  // show close price
 
