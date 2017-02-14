@@ -337,7 +337,7 @@
             .xScale(x)
             .yScale(yVolume);
 
-    var volumeSep = techan.plot.volume()
+    var volumeSep = techan.plot.close()  // todo,  changing to plot ^vix 
             .accessor(candlestick.accessor())   // Set the accessor to a candlestick accessor so we get highlighted bars
             .xScale(x)
             .yScale(yVolumeSep);

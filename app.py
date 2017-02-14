@@ -7,7 +7,7 @@ import random
 from os import listdir
 from os.path import isfile, join
 
-from flask import Flask
+from flask import Flask, request
 from flask import render_template
 
 from strategy import util
@@ -21,7 +21,11 @@ app = Flask(__name__, static_folder='data')
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    start_file = request.args.get('start_file')
+
+    if start_file is None:
+        start_file='index.html'
+    return render_template(start_file)
 
 
 @app.route("/buy")
