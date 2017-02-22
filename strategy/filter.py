@@ -15,30 +15,13 @@ from strategy import util
 from apis.db import MySession, Strategy
 
 
-class Filter(object):
+class BasicFilter(object):
     def __init__(self, symbol, window_enddate_str):
         # self.date = datetime.datetime.strptime(datestr, '%Y-%m-%d')
         self.symbol = symbol
 
         self.df = pd.read_csv(os.path.join('./data', symbol + '.csv'), index_col='Date', parse_dates=True)
         self.df = self.df.ix[:window_enddate_str]  # cut off
-
-    def filter(self, batch=False):
-        if len(self.df) <= WINDOW:
-            return False
-        print self.symbol, # print to monitor progress
-        ret = self.filter_price() \
-               and self.filter_volume() \
-               and self.high_in_window()
-        if not ret:
-            return False
-
-        if batch:
-            ret = self.has_cycle()  # not use it in online chat show, its too slow.
-            if ret:
-                reversed_index = [a[0] for a in ret]
-                return self.dry_up_volume(reversed_index)
-        return ret
 
     def filter_price(self):
         """
@@ -55,7 +38,7 @@ class Filter(object):
         last_vol_avg = tmp_pd.rolling(window=VOLUME_PERIOD).mean()[-1]
         return last_vol_avg > MIN_VOLUME
 
-    def high_in_window(self):
+    def filter_window_high(self):
         """
         for high in window, for previous close, check if the close is highest in window size days.
         """
@@ -69,7 +52,36 @@ class Filter(object):
 
         return max_recent_close >= max_window_close
 
-    def has_cycle(self):
+
+    def filter(self, batch=False):
+        if len(self.df) <= WINDOW:
+            return False
+        print self.symbol, # print to monitor progress
+
+        ret = True
+        for method in dir(self):
+            if callable(getattr(self, method)) and method.startswith('filter') and len(method)>len('filter'):
+                ret = ret and getattr(self, method)()
+
+        if not ret:
+            return False
+        else:
+            return ret
+
+
+class HEFilter(BasicFilter):
+    def filter(self):
+        ret = super(HEFilter, self).filter()
+        if not ret:
+            return False
+
+        ret = self.second_filter_cycle()  # not use it in online chat show, its too slow.
+        if ret:
+            reversed_index = [a[0] for a in ret]
+            return self.second_filter_dry_up_volume(reversed_index)
+        return ret
+
+    def second_filter_cycle(self):
         """
         it has 5-6 cycle in half a year, each up 20%
         Focus on stocks that regularly exhibit 6 to 8 day cycles of 20% price movement
@@ -100,7 +112,7 @@ class Filter(object):
         else:
             return False
 
-    def dry_up_volume(self, reversed_index):
+    def second_filter_dry_up_volume(self, reversed_index):
         """
         for each index, calculate five day low volume, include the index day.
         get average volume.
@@ -116,10 +128,14 @@ class Filter(object):
         avg_vol = vol*1.0/count
         return self.df.ix[-1]['Volume'] < 1.5 * avg_vol
 
+
+# todo, add the third filter, david landray
+
+
 if __name__ == "__main__":
     print 'run in whole project root foler'
-    print Filter('SH', '2010-01-01').filter() # For test, False
-    print Filter('IBM','2010-01-01').filter() # pass True
+    print BasicFilter('SH', '2010-01-01').filter() # For test, False
+    print BasicFilter('IBM', '2010-01-01').filter() # pass True
 
     argv = sys.argv[1:]
     date_str = None
@@ -153,7 +169,7 @@ if __name__ == "__main__":
     # this is window end date, but stored as chart start
 
     symbols = util.list_all_symbols()
-    qualifed_symbols = [symbol for symbol in symbols if Filter(symbol, date_str).filter(batch=True)]
+    qualifed_symbols = [symbol for symbol in symbols if HEFilter(symbol, date_str).filter()]
 
     random_strategy.symbols = ','.join(qualifed_symbols)
 
