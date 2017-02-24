@@ -16,6 +16,9 @@ from apis.db import MySession, Strategy
 
 
 class BasicFilter(object):
+    name = 'Basic strategy'
+    note = 'window high'
+
     def __init__(self, symbol, window_enddate_str):
         # self.date = datetime.datetime.strptime(datestr, '%Y-%m-%d')
         self.symbol = symbol
@@ -129,7 +132,48 @@ class HEFilter(BasicFilter):
         return self.df.ix[-1]['Volume'] < 1.5 * avg_vol
 
 
-# todo, add the third filter, david landray
+class LandryFilter(BasicFilter):
+    name = 'David Landry filter'
+    note = 'adx, dmi etc'
+    def filterAdx(self):
+        """
+        filter by adx and dmi; others, HV
+        :return: boolean
+        """
+
+        close = self.df.Close[-28:].as_matrix()  # Adj close is more accurate, factored
+        high = self.df.High[-28:].as_matrix()
+        low = self.df.Low[-28:].as_matrix()
+
+        adx = talib.ADX(high, low, close, 14) # high, low, close, timeperiod=14
+
+        last_adx = adx[-1]
+
+        if last_adx < 25:
+            return False
+
+        last_dm_pluse = talib.PLUS_DM(high, low)[-1]
+        last_dm_minus = talib.MINUS_DM(high, low)[-1]
+
+        if last_dm_pluse < last_dm_minus:
+            return False
+
+        """
+        50 days hv>40%
+        6 days HV/100 days HV < 50%, it tend to have explosive movement.
+        doubt this will filter recent plat stocks
+        """
+
+        hv50 = util.historical_volatility(self.df.Close, 50)
+        if hv50 < 0.4:
+            return False
+
+        hv6 = util.historical_volatility(self.df.Close, 6)
+        hv100 = util.historical_volatility(self.df.Close, 100)
+        if hv6/hv100 > 0.5:
+            return False
+
+        return True
 
 
 if __name__ == "__main__":
@@ -161,15 +205,15 @@ if __name__ == "__main__":
 
     session = MySession.create()
 
+    symbols = util.list_all_symbols()
+    qualifed_symbols = [symbol for symbol in symbols if LandryFilter(symbol, date_str).filter()]
+
     random_strategy = Strategy()
-    random_strategy.name = 'days high, with cycle'
-    random_strategy.note = '69 days high'
+    random_strategy.name = LandryFilter.name
+    random_strategy.note = LandryFilter.note
 
     random_strategy.window_end_date = window_enddate # todo, calculate to change it to start date.
     # this is window end date, but stored as chart start
-
-    symbols = util.list_all_symbols()
-    qualifed_symbols = [symbol for symbol in symbols if HEFilter(symbol, date_str).filter()]
 
     random_strategy.symbols = ','.join(qualifed_symbols)
 
