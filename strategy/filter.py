@@ -1,20 +1,16 @@
-
 import datetime
 import getopt
 import os
 import sys
 
-import pandas as pd
-import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 
-from strategy.defs import BEFORE_WINDOW, WINDOW, AFTER_WINDOW, NEW_HIGH_WINDOW, MIN_PRICE, VOLUME_PERIOD, MIN_VOLUME
-
 from strategy.filters.basic_filter import BasicFilter
 from strategy.filters.landry_adx_filter import LandryAdxFilter
 from strategy.filters.bowing_tie import BowingTieFilter
+from strategy.filters.he_filter import HEFilter
 
 
 from strategy import util
