@@ -1,5 +1,7 @@
 from strategy import util
+from strategy.filters.basic_filter import WindowHighFilter
 from strategy.filters.basic_filter import BasicFilter
+
 import talib
 
 

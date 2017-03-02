@@ -14,7 +14,7 @@ from strategy import util
 from apis.db import Game, Strategy, GameView, MySession, Round
 
 from strategy.defs import BEFORE_WINDOW, WINDOW, AFTER_WINDOW
-from strategy.filter import BasicFilter
+from strategy.filter import WindowHighFilter
 
 app = Flask(__name__, static_folder='data')
 
@@ -177,7 +177,7 @@ def random_strategy(fix_period=False): # not a random as added new high judge.
         start_date_str = my_list[start_index]['Date']
         end_date_str = my_list[start_index + (BEFORE_WINDOW + WINDOW)]['Date']  # cut to show window
 
-        if not BasicFilter(a_file[:-4], end_date_str).filter():
+        if not WindowHighFilter(a_file[:-4], end_date_str).filter():
             continue
 
         symbol = a_file.replace('.csv','')

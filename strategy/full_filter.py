@@ -7,10 +7,12 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 
-from strategy.filters.basic_filter import WindowHighFilter
+from strategy.filters.basic_filter import BasicFilter
 from strategy.filters.landry_adx_filter import LandryAdxFilter
 from strategy.filters.bowing_tie import BowingTieFilter
 from strategy.filters.he_filter import HEFilter
+
+from strategy.filters.quan_momentum import QuantitativeMomentum
 
 
 from strategy import util
@@ -19,8 +21,8 @@ from apis.db import MySession, Strategy
 
 if __name__ == "__main__":
     print 'run in whole project root foler'
-    print WindowHighFilter('SH', '2010-01-01').filter() # For test, False
-    print WindowHighFilter('IBM', '2010-01-01').filter() # pass True
+    print BasicFilter('SH', '2010-01-01').filter() # For test, False
+    print BasicFilter('IBM', '2010-01-01').filter() # pass True
 
     argv = sys.argv[1:]
     date_str = None
@@ -46,13 +48,12 @@ if __name__ == "__main__":
 
     session = MySession.create()
 
-    symbols = util.list_all_symbols()
-    ThisFilter = BowingTieFilter  # change here for different Filter Class
-    qualifed_symbols = [symbol for symbol in symbols if ThisFilter(symbol, date_str).filter()]
+    global_filter = QuantitativeMomentum(date_str)  # change here for different Filter Class
+    qualifed_symbols = global_filter.selected_symbols
 
     random_strategy = Strategy()
-    random_strategy.name = ThisFilter.name
-    random_strategy.note = ThisFilter.note
+    random_strategy.name = global_filter.name
+    random_strategy.note = global_filter.note
 
     random_strategy.window_end_date = window_enddate # todo, calculate to change it to start date.
     # this is window end date, but stored as chart start

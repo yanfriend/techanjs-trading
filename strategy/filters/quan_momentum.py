@@ -1,50 +1,56 @@
 from strategy import util
+from strategy.filters.basic_filter import WindowHighFilter
 from strategy.filters.basic_filter import BasicFilter
 import talib
+import pandas as pd
+import os
 
 
 class QuantitativeMomentum(BasicFilter):
     name = 'Quantitative Momentum'
     note = 'high return, low volatility'
 
-    def filterMomentum(self):
-        """
-        :return: boolean
-        """
-
-        #todo, write new below
+    selected_symbols = []
 
 
-        close = self.df.Close[-28:].as_matrix()  # Adj close is more accurate, factored
-        high = self.df.High[-28:].as_matrix()
-        low = self.df.Low[-28:].as_matrix()
+    def __init__(self, window_enddate_str):
+        print 'in QM'
 
-        adx = talib.ADX(high, low, close, 14) # high, low, close, timeperiod=14
+        symbols = util.list_all_symbols()
 
-        last_adx = adx[-1]
+        basic_symbols = []
+        for symbol in symbols:
+            if BasicFilter(symbol, window_enddate_str).filter():
+                basic_symbols.append(symbol)
 
-        if last_adx < 25:
-            return False
+        # calculate return to its 252 days, and store for comparison
+        return_list = []
+        for symbol in basic_symbols:
+            self.df = pd.read_csv(os.path.join('./data', symbol + '.csv'), index_col='Date', parse_dates=True)
+            self.df = self.df.ix[:window_enddate_str]  # cut off
+            try:
+                ret = self.df.ix[-1]['Adj Close'] / self.df.ix[-252]['Adj Close']
+            except IndexError:
+                continue
+            return_list.append((symbol, ret))
 
-        last_dm_pluse = talib.PLUS_DM(high, low)[-1]
-        last_dm_minus = talib.MINUS_DM(high, low)[-1]
+        return_list.sort(key=lambda tup:tup[1], reverse=True)
+        return_list = return_list[:100]  # top 100 only.
 
-        if last_dm_pluse < last_dm_minus:
-            return False
+        vol_list = []
+        for tup in return_list:
+            print symbol
+            symbol = tup[0]
+            self.df = pd.read_csv(os.path.join('./data', symbol + '.csv'), index_col='Date', parse_dates=True)
+            self.df = self.df.ix[:window_enddate_str]  # cut off
+            self.df = self.df[-251:]
+            up_day = sum(self.df.Close > self.df.Open)
+            down_day = sum(self.df.Close < self.df.Open)
+            volatility = (up_day - down_day)/len(self.df.Close)
+            vol_list.append((symbol, volatility))
 
-        """
-        50 days hv>40%
-        6 days HV/100 days HV < 50%, it tend to have explosive movement.
-        doubt this will filter recent plat stocks
-        """
+        vol_list.sort(key=lambda tup:tup[1], reverse=True)
+        vol_list = vol_list[:50]  # only get first 50 among 100
 
-        hv50 = util.historical_volatility(self.df.Close, 50)
-        if hv50 < 0.4:
-            return False
+        self.selected_symbols = [tup[0] for tup in vol_list]
 
-        hv6 = util.historical_volatility(self.df.Close, 6)
-        hv100 = util.historical_volatility(self.df.Close, 100)
-        if hv6/hv100 > 0.5:
-            return False
-
-        return True

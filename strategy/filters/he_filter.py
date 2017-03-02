@@ -1,7 +1,7 @@
-from strategy.filters.basic_filter import BasicFilter
+from strategy.filters.basic_filter import WindowHighFilter
 
 
-class HEFilter(BasicFilter):
+class HEFilter(WindowHighFilter):
     def filter(self):
         ret = super(HEFilter, self).filter()
         if not ret:

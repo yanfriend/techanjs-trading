@@ -1,9 +1,10 @@
 from strategy import util
+from strategy.filters.basic_filter import WindowHighFilter
 from strategy.filters.basic_filter import BasicFilter
 import talib
 
 
-class BowingTieFilter(BasicFilter):
+class BowingTieFilter(WindowHighFilter): # window high is better than basic filter, not to say few candidates
     name = 'Bowing Tie filter'
     note = 'three moving averages cross'
 

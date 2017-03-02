@@ -14,7 +14,7 @@ from apis.db import MySession, Strategy
 
 class BasicFilter(object):
     name = 'Basic strategy'
-    note = 'window high'
+    note = 'basic price and vol only'
 
     def __init__(self, symbol, window_enddate_str):
         # self.date = datetime.datetime.strptime(datestr, '%Y-%m-%d')
@@ -38,21 +38,6 @@ class BasicFilter(object):
         last_vol_avg = tmp_pd.rolling(window=VOLUME_PERIOD).mean()[-1]
         return last_vol_avg > MIN_VOLUME
 
-    def filter_window_high(self):
-        """
-        for high in window, for previous close, check if the close is highest in window size days.
-        """
-        # leave it for panda expression
-        # for i in range(15): # recent 15 close, is higher than recent 65 close
-        #     current_price = self.df.ix[-i-1].Close
-        #     if len(self.df[-65:][self.df['Close'] >= current_price])<=1:
-        #         return True
-        max_recent_close = self.df.ix[-NEW_HIGH_WINDOW:]['Adj Close'].max()
-        max_window_close = self.df.ix[-WINDOW:]['Adj Close'].max()
-
-        return max_recent_close >= max_window_close
-
-
     def filter(self, batch=False):
         if len(self.df) <= WINDOW:
             return False
@@ -67,3 +52,38 @@ class BasicFilter(object):
             return False
         else:
             return ret
+
+
+# todo, to another file
+class WindowHighFilter(BasicFilter):
+    name = 'Window high strategy'
+    note = 'window high'
+
+    def filter_window_high(self):
+        """
+        for high in window, for previous close, check if the close is highest in window size days.
+        """
+        # leave it for panda expression
+        # for i in range(15): # recent 15 close, is higher than recent 65 close
+        #     current_price = self.df.ix[-i-1].Close
+        #     if len(self.df[-65:][self.df['Close'] >= current_price])<=1:
+        #         return True
+        max_recent_close = self.df.ix[-NEW_HIGH_WINDOW:]['Adj Close'].max()
+        max_window_close = self.df.ix[-WINDOW:]['Adj Close'].max()
+
+        return max_recent_close >= max_window_close
+
+    # def filter(self, batch=False):
+    #     if len(self.df) <= WINDOW:
+    #         return False
+    #     print self.symbol, # print to monitor progress
+    #
+    #     ret = True
+    #     for method in dir(self):
+    #         if callable(getattr(self, method)) and method.startswith('filter') and len(method)>len('filter'):
+    #             ret = ret and getattr(self, method)()
+    #
+    #     if not ret:
+    #         return False
+    #     else:
+    #         return ret
