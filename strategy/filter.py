@@ -9,6 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 
 from strategy.filters.basic_filter import WindowHighFilter
 from strategy.filters.landry_adx_filter import LandryAdxFilter
+from strategy.filters.adx_variant_filter import AdxVariantFilter
 from strategy.filters.bowing_tie import BowingTieFilter
 from strategy.filters.he_filter import HEFilter
 
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     session = MySession.create()
 
     symbols = util.list_all_symbols()
-    ThisFilter = BowingTieFilter  # change here for different Filter Class
+    ThisFilter = AdxVariantFilter # BowingTieFilter  # change here for different Filter Class
     qualifed_symbols = [symbol for symbol in symbols if ThisFilter(symbol, date_str).filter()]
 
     random_strategy = Strategy()

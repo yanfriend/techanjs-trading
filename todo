@@ -1,10 +1,11 @@
 1, more strategies ? 
-filter by momentum? 
+cycle recalculation ? 
+
+filter by momentum, use HV as path(nomalized), instead of up/down day? 
 
 2, auto test filtered out stocks?
-3, cycle recalculation ? 
 
-4, add FA info
+3, add FA info
 
 expends:
 replay

@@ -5,13 +5,11 @@ from strategy.filters.basic_filter import BasicFilter
 import talib
 
 
-class LandryAdxFilter(BasicFilter):
-    name = 'David Landry adx filter'
-    note = 'adx, dmi etc'
+class AdxVariantFilter(BasicFilter):
+    name = 'adx variant filter'
+    note = 'adx in mid, dmi etc'
     def filterAdx(self):
         """
-        filter by adx and dmi; others, HV, adx>25/30
-
         from another(Greg Weitzman) for reference: 20-40 tendding, >40 exhaustion
         https://www.youtube.com/watch?v=7r8tRz2xPc0
 
@@ -26,7 +24,7 @@ class LandryAdxFilter(BasicFilter):
 
         last_adx = adx[-1]
 
-        if last_adx < 25:
+        if last_adx < 20 or last_adx > 40:
             return False
 
         last_dm_pluse = talib.PLUS_DM(high, low)[-1]
@@ -35,19 +33,19 @@ class LandryAdxFilter(BasicFilter):
         if last_dm_pluse < last_dm_minus:
             return False
 
-        """
-        50 days hv>40%
-        6 days HV/100 days HV < 50%, it tend to have explosive movement.
-        doubt this will filter recent plat stocks
-        """
-
-        hv50 = util.historical_volatility(self.df.Close, 50)
-        if hv50 < 0.4:
-            return False
-
-        hv6 = util.historical_volatility(self.df.Close, 6)
-        hv100 = util.historical_volatility(self.df.Close, 100)
-        if hv6/hv100 > 0.5:
-            return False
+        # """
+        # 50 days hv>40%
+        # 6 days HV/100 days HV < 50%, it tend to have explosive movement.
+        # doubt this will filter recent plat stocks
+        # """
+        #
+        # hv50 = util.historical_volatility(self.df.Close, 50)
+        # if hv50 < 0.4:
+        #     return False
+        #
+        # hv6 = util.historical_volatility(self.df.Close, 6)
+        # hv100 = util.historical_volatility(self.df.Close, 100)
+        # if hv6/hv100 > 0.5:
+        #     return False
 
         return True
