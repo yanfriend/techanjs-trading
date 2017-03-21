@@ -6,15 +6,15 @@ import pandas as pd
 import os
 
 
-class QuantitativeMomentum(BasicFilter):
-    name = 'Quantitative Momentum'
-    note = 'high return, low volatility'
+class LinearRegression(BasicFilter):
+    name = 'Linear Regression'
+    note = 'as close as an upward line'
 
     selected_symbols = []
 
 
     def __init__(self, window_enddate_str):
-        print 'in QM'
+        print 'in LR'
 
         symbols = util.list_all_symbols()
 
@@ -35,22 +35,28 @@ class QuantitativeMomentum(BasicFilter):
             return_list.append((symbol, ret))
 
         return_list.sort(key=lambda tup:tup[1], reverse=True)
-        return_list = return_list[:1000]  # top 500 only, important
+        return_list = return_list[:1000]  # all around 5000 stocks
 
         vol_list = []
+
         for tup in return_list:
             print symbol
             symbol = tup[0]
             self.df = pd.read_csv(os.path.join('./data', symbol + '.csv'), index_col='Date', parse_dates=True)
             self.df = self.df.ix[:window_enddate_str]  # cut off
             self.df = self.df[-251:]
-            up_day = sum(self.df.Close > self.df.Open)
-            down_day = sum(self.df.Close < self.df.Open)
-            volatility = (up_day - down_day)/len(self.df.Close)
-            vol_list.append((symbol, volatility))
 
-        vol_list.sort(key=lambda tup:tup[1], reverse=True) # more up days
-        vol_list = vol_list[:50]  # only get first 50 among 100
+            # import ipdb; ipdb.set_trace()
+            # self.df['jDate'] = self.df.index.to_julian_date() # one way to use variant of date index
+            # pd.ols(y=self.df['Adj Close'], x=self.df.jDate)
+
+            self.df['ind'] = range(0, len(self.df))
+            model = pd.ols(y=self.df['Adj Close'], x=self.df.ind)
+            deviation = sum((model.resid/self.df['Adj Close'])**2)
+            vol_list.append((symbol, deviation))
+
+        vol_list.sort(key=lambda tup:tup[1])
+        vol_list = vol_list[:50]  # only get first 50 stable ones
 
         self.selected_symbols = [tup[0] for tup in vol_list]
 

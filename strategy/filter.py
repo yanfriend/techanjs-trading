@@ -13,6 +13,9 @@ from strategy.filters.adx_variant_filter import AdxVariantFilter
 from strategy.filters.bowing_tie import BowingTieFilter
 from strategy.filters.he_filter import HEFilter
 
+from strategy.filters.linear_regression import LinearRegression
+from strategy.filters.quan_momentum import QuantitativeMomentum
+
 
 from strategy import util
 from apis.db import MySession, Strategy
@@ -48,8 +51,9 @@ if __name__ == "__main__":
     session = MySession.create()
 
     symbols = util.list_all_symbols()
-    ThisFilter = AdxVariantFilter # BowingTieFilter  # change here for different Filter Class
-    qualifed_symbols = [symbol for symbol in symbols if ThisFilter(symbol, date_str).filter()]
+    ThisFilter = QuantitativeMomentum # LinearRegression  # QuantitativeMomentum,  BowingTieFilter  # change here for different Filter Class
+    qualifed_symbols = ThisFilter(date_str).selected_symbols  # for whole scan
+    # qualifed_symbols = [symbol for symbol in symbols if ThisFilter(symbol, date_str).filter()]
 
     random_strategy = Strategy()
     random_strategy.name = ThisFilter.name
